@@ -1,0 +1,10 @@
+
+Warm swap
+===================================================================
+
+1. Login to Shaheen-II
+    `$ ssh <user_name>@shaheen.hpc.kaust.edu.sa`
+2. Login to the Shaheen-II Cray System Management Workstation (smw2)
+    `$ ssh crayadm@smw2`
+3. Halt the blade
+    `xtcli halt <blade_id>`

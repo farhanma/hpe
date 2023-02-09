@@ -1,0 +1,296 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>HPL &mdash; HPE KAUST 0.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Overview" href="overview.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> HPE KAUST
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption" role="heading"><span class="caption-text">Sysadmin Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="warmswap.html">Warm swap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">HPL</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#request-reservation">Request reservation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#linpack-slurm-script">LINPACK SLURM script</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#lunching-multiple-linpack-script">Lunching multiple LINPACK script</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">HPE KAUST</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>HPL</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/trimming.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <section id="hpl">
+<h1>HPL<a class="headerlink" href="#hpl" title="Permalink to this heading">¶</a></h1>
+<p>Node testing procedure is usually done if a component has been moved around on a
+blade for hardware diagnostic purposes or general diagnostics. HPL ( High
+Performance LINPACK ( Linear Algebra PACKage ) ) benchmarks are a measure of a
+system’s floating-point computing power. The equation to calculate the theoretical
+peak floating-point performance is:</p>
+<div class="math notranslate nohighlight">
+\[GFLOPS = \text{CPU GHz} \times \text{cores} \times
+\text{instruction per cycle} \times \text{sockets}\]</div>
+<p>Thus, based on the above equation, the theoretical peak performance of a Shaheen-II Intel
+Haswell compute node is: <span class="math notranslate nohighlight">\(1177.6 \text{ GFLOPS }\)</span>. However, the sustained
+LINPACK performance of a Shaheen-II compute node is between: <span class="math notranslate nohighlight">\(935-955 \text{ GFLOPS ( } \sim80\% \text{ of the peak performance ) }\)</span>.</p>
+<section id="request-reservation">
+<h2>Request reservation<a class="headerlink" href="#request-reservation" title="Permalink to this heading">¶</a></h2>
+<p>Update the KSL RT ticket requesting for reservation on the nodes to be tested.
+Make sure the nodes are not in a drained state. If they are in a drained state
+asked for the nodes to be resumed in the KSL RT ticket.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span><span class="nv">NID</span><span class="o">=</span>nid0<span class="o">[</span><span class="m">5100</span>-5103,5820-5823<span class="o">]</span>
+<span class="gp">$ </span>echo<span class="p">;</span><span class="w"> </span>scontrol<span class="w"> </span>show<span class="w"> </span>node<span class="w"> </span><span class="nv">$NID</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>egrep<span class="w"> </span><span class="s2">&quot;NodeName|State&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>awk<span class="w"> </span><span class="s1">&#39;{print $1}&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>paste<span class="w"> </span>-s<span class="w"> </span>-d<span class="s1">&#39; \n&#39;</span><span class="p">;</span><span class="w"> </span><span class="nb">echo</span>
+
+<span class="go">NodeName=nid05100 State=ALLOCATED</span>
+<span class="go">NodeName=nid05101 State=ALLOCATED</span>
+<span class="go">NodeName=nid05102 State=ALLOCATED</span>
+<span class="go">NodeName=nid05103 State=ALLOCATED</span>
+<span class="go">NodeName=nid05820 State=ALLOCATED</span>
+<span class="go">NodeName=nid05821 State=ALLOCATED</span>
+<span class="go">NodeName=nid05822 State=ALLOCATED</span>
+<span class="go">NodeName=nid05823 State=ALLOCATED</span>
+
+<span class="gp">$ </span>echo<span class="p">;</span><span class="w"> </span>squeue<span class="w"> </span>-w<span class="w"> </span><span class="nv">$NID</span><span class="p">;</span><span class="w"> </span><span class="nb">echo</span>
+
+<span class="go">  JOBID       USER ACCOUNT           NAME  ST REASON    START_TIME                TIME  TIME_LEFT NODES</span>
+
+<span class="gp">$ </span>echo<span class="p">;</span><span class="w"> </span>scontrol<span class="w"> </span>show<span class="w"> </span>res<span class="w"> </span>rt29677<span class="p">;</span><span class="w"> </span><span class="nb">echo</span>
+
+<span class="go">ReservationName=rt29677 StartTime=2020-02-27T12:31:52 EndTime=2020-02-28T00:31:52 Duration=12:00:00</span>
+<span class="go">   Nodes=nid0[5100-5103,5820-5823] NodeCnt=8 CoreCnt=256 Features=(null) PartitionName=(null) Flags=SPEC_NODES</span>
+<span class="go">   TRES=cpu=512</span>
+<span class="go">   Users=(null) Groups=(null) Accounts=v1003,k00, k01 Licenses=(null) State=ACTIVE BurstBuffer=(null) Watts=n/a</span>
+<span class="go">   MaxStartDelay=(null)</span>
+</pre></div>
+</div>
+</section>
+<section id="linpack-slurm-script">
+<h2>LINPACK SLURM script<a class="headerlink" href="#linpack-slurm-script" title="Permalink to this heading">¶</a></h2>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">#</span>!/bin/bash
+
+<span class="gp">#</span>SBATCH<span class="w"> </span>-N<span class="w"> </span><span class="m">1</span>
+<span class="gp">#</span>SBATCH<span class="w"> </span>-t<span class="w"> </span><span class="m">0</span>:50:00
+<span class="gp">#</span>SBATCH<span class="w"> </span>--output<span class="o">=</span>linpack-%A_%a_%N.out
+<span class="gp">#</span>SBATCH<span class="w"> </span>--err<span class="o">=</span>linpack-%A_%a_%N.err
+<span class="gp">#</span>SBATCH<span class="w"> </span>--ntasks<span class="o">=</span><span class="m">1</span>
+<span class="gp">#</span>SBATCH<span class="w"> </span>--cpus-per-task<span class="o">=</span><span class="m">32</span>
+<span class="gp">#</span>SBATCH<span class="w"> </span>--sockets-per-node<span class="o">=</span><span class="m">2</span>
+<span class="gp">#</span>SBATCH<span class="w"> </span>--cores-per-socket<span class="o">=</span><span class="m">16</span>
+<span class="gp">#</span>SBATCH<span class="w"> </span>--threads-per-core<span class="o">=</span><span class="m">1</span>
+<span class="gp">#</span>SBATCH<span class="w"> </span>--hint<span class="o">=</span>nomultithread
+<span class="gp">#</span>SBATCH<span class="w"> </span>--account<span class="o">=</span>v1003
+<span class="gp">#</span>SBATCH<span class="w"> </span>--reservation<span class="o">=</span>rt29677
+
+<span class="go">export OMP_NUM_THREADS=32</span>
+<span class="go">export KMP_AFFINITY=nowarnings,scatter,1,0,granularity=fine</span>
+
+<span class="go">./xlinpack_xeon64 lininput_xeon64</span>
+</pre></div>
+</div>
+</section>
+<section id="lunching-multiple-linpack-script">
+<h2>Lunching multiple LINPACK script<a class="headerlink" href="#lunching-multiple-linpack-script" title="Permalink to this heading">¶</a></h2>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">for i in {5100..5103} {5820..5823}</span>
+<span class="go">do</span>
+<span class="go">  sbatch -w nid0$i linpak_slurm.sh</span>
+<span class="go">done</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Overview" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2022-2023, Hewlett Packard Enterprise..
+      <span class="lastupdated">
+        Last updated on Feb 09, 2023.
+      </span>
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
