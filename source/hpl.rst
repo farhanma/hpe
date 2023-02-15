@@ -1,20 +1,24 @@
 HPL
 ===
 
-Node testing procedure is usually done if a component has been moved around on a
-blade for hardware diagnostic purposes or general diagnostics. HPL ( High
-Performance LINPACK ( Linear Algebra PACKage ) ) benchmarks are a measure of a
-system's floating-point computing power. The equation to calculate the theoretical
-peak floating-point performance is:
+.. meta::
+  :description: HPL benchmark on Shaheen II
+  :keywords: HPL, gflops, linpack
+
+HPL ( High Performance LINPACK ( Linear Algebra PACKage ) ) benchmarks are a
+measure of a system's floating-point computing power. The equation to calculate
+the theoretical peak of the floating-point performance of a system can be
+measured by the following equation:
 
 .. math::
 
   GFLOPS = \text{CPU GHz} \times \text{cores} \times
-  \text{instruction per cycle} \times \text{sockets}
+  \text{instruction per cycle} \times \text{sockets} \times \text{nodes}
 
-Thus, based on the above equation, the theoretical peak performance of a Shaheen-II Intel
-Haswell compute node is: :math:`1177.6 \text{ GFLOPS }`. However, the sustained
-LINPACK performance of a Shaheen-II compute node is between: :math:`935-955 \text{ GFLOPS ( } \sim80\% \text{ of the peak performance ) }`.
+The Intel Haswell node of Shahenn II delivers a theoretical peak performance of:
+:math:`1177.6 \text{ GFLOPS }`,
+whereas the sustained LINPACK performance of a Shaheen II compute node is between:
+:math:`935-955 \text{ GFLOPS ( } \sim80\% \text{ of the peak performance ) }`.
 
 ..
   Get the LINKPACK binary for Shaheen-II and a SLURM script at ``_.
