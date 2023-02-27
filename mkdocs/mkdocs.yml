@@ -24,7 +24,10 @@ theme:
         icon: material/brightness-4
         name: Switch to system preference
 nav:
+  - index.md
   - 'Shaheen II':
+    - shaheen2/ior.md
     - shaheen2/hpl.md
     - shaheen2/trimming.md
     - shaheen2/reservation.md
+
