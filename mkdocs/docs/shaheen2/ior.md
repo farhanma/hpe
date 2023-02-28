@@ -12,17 +12,19 @@ to saturate file system IO.
 IOR binary and a sample SLURM script can be downloaded from:
 https://github.com/farhanma/hpe-docs/tree/opt/ior
 
-* Running IOR on /scratch benchmarks performance of the Cray Sonexion 2000
-* Running IOR on /project benchmarks performance of the Cray ClusterStor E1000
+* Running IOR on /scratch benchmarks the performance of the Cray Sonexion 2000
+  * Fixed time ( 60 seconds )
+  * 1152 compute nodes
+* Running IOR on /project benchmarks the performance of the Cray ClusterStor E1000
 
 ## Useful commands
 
 ```sh
 # downloading IOR binary and running it using SLURM
 $ cd /scratch/<username>
-$ git clone --branch opt https://github.com/farhanma/hpe_sysadmin_guide.git
-$ cd hpe_sysadmin_guide/shaheen2/ior
-$ cat ior_slurm.sh
+$ git clone --branch opt https://github.com/farhanma/hpe.git
+$ cd hpe/shaheen2/ior
+$ cat ior_snx_slurm.sh
 
 #!/bin/bash
 
