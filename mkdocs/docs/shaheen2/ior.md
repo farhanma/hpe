@@ -39,7 +39,7 @@ $ cat ior_snx_slurm.sh
 # usage: sbatch ior_slurm.sh [<number_of_seconds> <ior_dir_path>]
 # ##############################################################################
 
-IOR_FILEPATH=${2:-/scratch/farhanma/ior}
+IOR_FILEPATH=${2:-/scratch/farhanma/hpe/shaheen2/ior}
 OUT_FILEPATH=${IOR_FILEPATH}/output
 
 rm -rf ${OUT_FILEPATH} && mkdir -p ${OUT_FILEPATH}
@@ -64,8 +64,6 @@ then
   echo "ERROR: must be run on a Lustre file system"
   exit
 fi
-
-# export PATH=/opt/cray/lustre-cray_ari_s/default/bin:$PATH
 
 # total number of ranks and files
 RANKS=$(( ${FILES_PER_OST}*${NOST} ))
@@ -108,7 +106,7 @@ grep ^Max ${BASE}.IOR || echo " ERROR: IOR did not complete"
 echo " "
 
 # to submit IOR job to SLURM
-$ sbatch ior_slurm.sh <number_of_seconds> <>
+$ sbatch ior_snx_slurm.sh <number_of_seconds> <>
 ```
 
 ## MetaData Test ( MDTest )
