@@ -1,5 +1,5 @@
 ---
-title: IOR and MDTest
+title: IOR
 ---
 
 ## Interleaved Or Random ( IOR )
@@ -9,40 +9,27 @@ systems using various interfaces and access patterns. IOR uses MPI for process
 synchronization. IOR processes run in parallel across several nodes in a cluster
 to saturate file system IO.
 
-IOR binary and a sample SLURM script can be downloaded from:
-https://github.com/farhanma/hpe/tree/opt/shaheen2/ior-sonexion
+## Cray Sonexion 2000
 
-## Cray Sonexion 2000 ( `/lustre/scratch` )
+### `/lustre/scratch`
 
 * Lustre Parallel file system
-* 5,988 disks ( 4 TB each disk )
-* Usable storage capacity of 17.2 PB, delivering over 500 GB/s of I/O throughput
+* 5988 disks ( 4 TB per disk )
+* Storage capacity: ~17.2 PB
+* I/O Throughput: ~500 GB/s
 * 72 Scalable Storage Units ( SSU )
 * 144 Object Storage Servers ( OSS )
-* Connected to XC40 via 72 Lustre NETwork ( LNET ) router service nodes
-* IOR benchmarks the /scratch performance ( Cray Sonexion 2000 )
-  * Measuring the amount of data moved in a fixed time ( 60 seconds )
-  * 1152 compute nodes
-  * Interested in the IOR write performance
+* Connected to Shaheen via 72 Lustre NETwork ( LNET ) router service nodes
+* IOR benchmarks amount of data moved in a fixed time ( 60 seconds ) using 1152 nodes
+* https://github.com/farhanma/hpe/tree/master/opt/shaheen2/ior-sonexion
 
-## Cray ClusterStor E1000 ( `/lustre2/project` )
-
-* Lustre Parallel file system
-* 3,392 disks ( 16 TB each disk )
-
-3392 16TB disks
-37 PB of usable storage
-Over 120 GB/s bandwidth
-
-* Running IOR on /project benchmarks the performance of the Cray ClusterStor E1000
-
-## Useful commands
+### Useful commands
 
 ```sh
-# downloading IOR binary and running it using SLURM
+# download IOR binary and running it using SLURM
 $ cd /scratch/<username>
-$ git clone --branch opt https://github.com/farhanma/hpe.git
-$ cd hpe/shaheen2/ior-sonexion
+$ git clone https://github.com/farhanma/hpe.git
+$ cd hpe/opt/shaheen2/ior-sonexion
 $ cat ior-sonexion_slurm.sh
 
 #!/bin/bash
@@ -51,8 +38,8 @@ $ cat ior-sonexion_slurm.sh
 #SBATCH -t 0:20:00
 #SBATCH -J ior-sonexion-write
 #SBATCH -p workq
-#SBATCH --account=<account_name>
-#SBATCH --reservation=<reservation_name>
+#SBATCH --account=v1003
+#SBATCH --reservation=maintenance
 
 # ##############################################################################
 # write to all OSTs for 1 minute ( 60 seconds ), or time requested
@@ -60,7 +47,7 @@ $ cat ior-sonexion_slurm.sh
 # ##############################################################################
 
 IOR_FILEPATH=${2:-/scratch/farhanma/hpe/shaheen2/ior-sonexion}
-OUT_FILEPATH=${IOR_FILEPATH}/output
+OUT_FILEPATH=${IOR_FILEPATH}/output.`date +"%Y%m%d-%H%M%S"`
 
 rm -rf ${OUT_FILEPATH} && mkdir -p ${OUT_FILEPATH}
 
@@ -129,6 +116,20 @@ echo " "
 # to submit IOR job to SLURM
 $ sbatch ior-sonexion_slurm.sh [<number_of_seconds> <ior_dir_path>]
 ```
+
+
+## Cray ClusterStor E1000 ( `/lustre2/project` )
+
+* Lustre Parallel file system
+* 3,392 disks ( 16 TB each disk )
+
+3392 16TB disks
+37 PB of usable storage
+Over 120 GB/s bandwidth
+
+* Running IOR on /project benchmarks the performance of the Cray ClusterStor E1000
+
+
 
 ## MetaData Test ( MDTest )
 
