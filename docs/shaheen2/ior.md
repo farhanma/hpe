@@ -23,8 +23,8 @@ https://github.com/farhanma/hpe-docs/tree/opt/ior
 # downloading IOR binary and running it using SLURM
 $ cd /scratch/<username>
 $ git clone --branch opt https://github.com/farhanma/hpe.git
-$ cd hpe/shaheen2/ior
-$ cat ior_snx_slurm.sh
+$ cd hpe/shaheen2/ior-sonexion
+$ cat ior_sonexion_slurm.sh
 
 #!/bin/bash
 
@@ -106,7 +106,7 @@ grep ^Max ${BASE}.IOR || echo " ERROR: IOR did not complete"
 echo " "
 
 # to submit IOR job to SLURM
-$ sbatch ior_snx_slurm.sh <number_of_seconds> <>
+$ sbatch ior_sonexion_slurm.sh [<number_of_seconds> <ior_dir_path>]
 ```
 
 ## MetaData Test ( MDTest )
