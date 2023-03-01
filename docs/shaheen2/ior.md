@@ -10,11 +10,30 @@ synchronization. IOR processes run in parallel across several nodes in a cluster
 to saturate file system IO.
 
 IOR binary and a sample SLURM script can be downloaded from:
-https://github.com/farhanma/hpe-docs/tree/opt/ior
+https://github.com/farhanma/hpe/tree/opt/shaheen2/ior-sonexion
 
-* Running IOR on /scratch benchmarks the performance of the Cray Sonexion 2000
-  * Fixed time ( 60 seconds )
+## Cray Sonexion 2000 ( `/lustre/scratch` )
+
+* Lustre Parallel file system
+* 5,988 disks ( 4 TB each disk )
+* Usable storage capacity of 17.2 PB, delivering over 500 GB/s of I/O throughput
+* 72 Scalable Storage Units ( SSU )
+* 144 Object Storage Servers ( OSS )
+* Connected to XC40 via 72 Lustre NETwork ( LNET ) router service nodes
+* IOR benchmarks the /scratch performance ( Cray Sonexion 2000 )
+  * Measuring the amount of data moved in a fixed time ( 60 seconds )
   * 1152 compute nodes
+  * Interested in the IOR write performance
+
+## Cray ClusterStor E1000 ( `/lustre2/project` )
+
+* Lustre Parallel file system
+* 3,392 disks ( 16 TB each disk )
+
+3392 16TB disks
+37 PB of usable storage
+Over 120 GB/s bandwidth
+
 * Running IOR on /project benchmarks the performance of the Cray ClusterStor E1000
 
 ## Useful commands
@@ -24,22 +43,23 @@ https://github.com/farhanma/hpe-docs/tree/opt/ior
 $ cd /scratch/<username>
 $ git clone --branch opt https://github.com/farhanma/hpe.git
 $ cd hpe/shaheen2/ior-sonexion
-$ cat ior_sonexion_slurm.sh
+$ cat ior-sonexion_slurm.sh
 
 #!/bin/bash
 
 #SBATCH -N 1152
 #SBATCH -t 0:20:00
-#SBATCH -J ior-snx-write
+#SBATCH -J ior-sonexion-write
 #SBATCH -p workq
-#SBATCH --account=v1003
+#SBATCH --account=<account_name>
+#SBATCH --reservation=<reservation_name>
 
 # ##############################################################################
 # write to all OSTs for 1 minute ( 60 seconds ), or time requested
-# usage: sbatch ior_slurm.sh [<number_of_seconds> <ior_dir_path>]
+# usage: sbatch ior-sonexion_slurm.sh [<number_of_seconds> <ior_dir_path>]
 # ##############################################################################
 
-IOR_FILEPATH=${2:-/scratch/farhanma/hpe/shaheen2/ior}
+IOR_FILEPATH=${2:-/scratch/farhanma/hpe/shaheen2/ior-sonexion}
 OUT_FILEPATH=${IOR_FILEPATH}/output
 
 rm -rf ${OUT_FILEPATH} && mkdir -p ${OUT_FILEPATH}
@@ -98,7 +118,8 @@ echo "Measured write rate for $IOR_SECONDS seconds is ..."
 srun --ntasks=${RANKS} \
      --ntasks-per-node=${RANKS_PER_NODE} \
      --hint=nomultithread \
-     ${IOR_FILEPATH}/ior ${OPTIONS} -o ${TESTDIR}/IOR_file < /dev/null >> ${BASE}.IOR
+     ${IOR_FILEPATH}/bin/ior \
+        ${OPTIONS} -o ${TESTDIR}/IOR_file < /dev/null >> ${BASE}.IOR
 
 # summary of IOR output
 echo " "
@@ -106,7 +127,7 @@ grep ^Max ${BASE}.IOR || echo " ERROR: IOR did not complete"
 echo " "
 
 # to submit IOR job to SLURM
-$ sbatch ior_sonexion_slurm.sh [<number_of_seconds> <ior_dir_path>]
+$ sbatch ior-sonexion_slurm.sh [<number_of_seconds> <ior_dir_path>]
 ```
 
 ## MetaData Test ( MDTest )
