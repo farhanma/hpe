@@ -10,7 +10,7 @@ a system's floating-point. Theoretically, the floating-point of a system can be
 calculated as follows:
 
 ```math
-GFLOPS = CPU frequency ( GHz ) x number of cores x number of instruction per cycle x number of sockets x number of nodes
+GFLOPS = CPU frequency ( GHz ) \times number of cores x number of instruction per cycle x number of sockets x number of nodes
 ```
 
 For instance, the Intel Haswell CPU that's used in Shahenn II delivers a theoretical
@@ -18,7 +18,7 @@ peak performance of: `1.18 TFLOPS`, whereas the sustained LINPACK
 performance of single compute node of Shaheen II is between:
 `935-955 GFLOPS ( ~80% of the peak performance )`.
 
-Before running HPL, [request for reservation in slurm](slurm_res.md) on the nodes
+Before running HPL, [request for reservation in slurm](reservation.md) on the nodes
 to be benchmarked.
 
 Shaheen II HPL binary and a sample SLURM script can be downloaded from:
