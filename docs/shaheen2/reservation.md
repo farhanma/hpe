@@ -18,21 +18,21 @@ title: Reservation
 ```sh
 # convert a nid into cname
 $ nid2str nid05200
-    c7-2c0s4n0
-    │ │ │ │ │
-    │ │ │ │ └───node {0..3}
-    │ │ │ └───slot {0..15}
-    │ │ └───chassis {0..2}
-    │ └───row {0..3}
-    └───cabinet {0..9}
+   c7-2c0s4n0
+   │ │ │ │ │
+   │ │ │ │ └───node {0..3}
+   │ │ │ └───slot {0..15}
+   │ │ └───chassis {0..2}
+   │ └───row {0..3}
+   └───cabinet {0..9}
 
 # convert a node string to nid
 $ nid2blade nid05200
-    nid05200
+   nid05200
 
 # get all nids in a blade
 $ nid2blade nid05200
-    nid0[5200-5203]
+   nid0[5200-5203]
 
 # query reservation
 $ scontrol show res <reservation_id>

@@ -30,7 +30,8 @@ to saturate file system IO.
 $ cd /scratch/<username>
 $ git clone --single-branch --branch opt https://github.com/farhanma/hpe.git
 $ cd /scratch/farhanma/hpe/shaheen2/ior/sonexion
-$ $ cat ior-sonexion_slurm.sh
+$ cat ior-sonexion_slurm.sh
+
 #!/bin/bash
 
 #SBATCH -N 1152
