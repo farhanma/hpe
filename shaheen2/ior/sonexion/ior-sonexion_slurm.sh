@@ -12,8 +12,8 @@
 # usage: sbatch ior-sonexion_slurm.sh [<number_of_seconds> <ior_dir_path>]
 # ##############################################################################
 
-IOR_FILEPATH=${2:-/scratch/farhanma/hpe/shaheen2/ior-sonexion}
-OUT_FILEPATH=${IOR_FILEPATH}/output
+IOR_FILEPATH=${2:-/scratch/farhanma/hpe/shaheen2/ior/sonexion}
+OUT_FILEPATH=${IOR_FILEPATH}/output.`date +"%Y%m%d-%H%M%S"`
 
 rm -rf ${OUT_FILEPATH} && mkdir -p ${OUT_FILEPATH}
 
@@ -78,4 +78,3 @@ srun --ntasks=${RANKS} \
 echo " "
 grep ^Max ${BASE}.IOR || echo " ERROR: IOR did not complete"
 echo " "
-
