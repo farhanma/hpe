@@ -21,17 +21,16 @@ to saturate file system IO.
 * 144 Object Storage Servers ( OSS )
 * Connected to Shaheen via 72 Lustre NETwork ( LNET ) router service nodes
 * IOR benchmarks amount of data moved in a fixed time ( 60 seconds ) using 1152 nodes
-* https://github.com/farhanma/hpe/tree/master/opt/shaheen2/ior-sonexion
+* https://github.com/farhanma/hpe/tree/opt/shaheen2/ior/sonexion
 
 ### Useful commands
 
 ```sh
 # download IOR binary and running it using SLURM
 $ cd /scratch/<username>
-$ git clone https://github.com/farhanma/hpe.git
-$ cd hpe/opt/shaheen2/ior-sonexion
-$ cat ior-sonexion_slurm.sh
-
+$ git clone --single-branch --branch opt https://github.com/farhanma/hpe.git
+$ cd /scratch/farhanma/hpe/shaheen2/ior/sonexion
+$ $ cat ior-sonexion_slurm.sh
 #!/bin/bash
 
 #SBATCH -N 1152
@@ -39,14 +38,14 @@ $ cat ior-sonexion_slurm.sh
 #SBATCH -J ior-sonexion-write
 #SBATCH -p workq
 #SBATCH --account=v1003
-#SBATCH --reservation=maintenance
+#SBATCH --reservation=maintenance1
 
 # ##############################################################################
 # write to all OSTs for 1 minute ( 60 seconds ), or time requested
 # usage: sbatch ior-sonexion_slurm.sh [<number_of_seconds> <ior_dir_path>]
 # ##############################################################################
 
-IOR_FILEPATH=${2:-/scratch/farhanma/hpe/shaheen2/ior-sonexion}
+IOR_FILEPATH=${2:-/scratch/farhanma/hpe/shaheen2/ior/sonexion}
 OUT_FILEPATH=${IOR_FILEPATH}/output.`date +"%Y%m%d-%H%M%S"`
 
 rm -rf ${OUT_FILEPATH} && mkdir -p ${OUT_FILEPATH}
@@ -117,31 +116,8 @@ echo " "
 $ sbatch ior-sonexion_slurm.sh [<number_of_seconds> <ior_dir_path>]
 ```
 
+## Cray ClusterStor E1000
 
-## Cray ClusterStor E1000 ( `/lustre2/project` )
+### `/lustre2/project`
 
-* Lustre Parallel file system
-* 3,392 disks ( 16 TB each disk )
-
-3392 16TB disks
-37 PB of usable storage
-Over 120 GB/s bandwidth
-
-* Running IOR on /project benchmarks the performance of the Cray ClusterStor E1000
-
-
-
-## MetaData Test ( MDTest )
-
-It is an MPI-based application for evaluating the metadata performance of a file
-system and has been designed to test parallel file systems. MDTest specifically
-tests the peak metadata rates of storage systems under different directory
-structures. MDTest processes run in parallel across several nodes in a cluster
-to saturate file system IO. MDTest creates directory trees of arbitrary depth
-and can be directed to create a mixture of workloads.
-
-MDTest binary and a sample SLURM script can be downloaded from:
-https://github.com/farhanma/hpe-docs/tree/opt/mdtest
-
-* Running MDTest on /scratch benchmarks performance of the Cray Sonexion 2000
-* Running MDTest on /project benchmarks performance of the Cray ClusterStor E1000
+### Useful commands
