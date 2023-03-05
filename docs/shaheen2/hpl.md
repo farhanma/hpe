@@ -22,7 +22,7 @@ Before running HPL, [request for reservation in slurm](reservation.md) on the no
 to be benchmarked.
 
 Shaheen II HPL binary and a sample SLURM script can be downloaded from:
-https://github.com/farhanma/hpe-docs/tree/opt/shaheen2/hpl
+https://github.com/farhanma/hpe/tree/opt/shaheen2/hpl
 
 ## Useful commands
 
@@ -73,7 +73,7 @@ $ squeue -u <shaheen_username>
 # helpful command to grep the performance results
 $ cat *nid* | egrep -A 1 -i 'node|Maximal|pass' | grep -e Node -e Maximal -e 55000
 
-# a sample script that might help
+# a sample script to extracts the GFLOPS results from multiple output files
 $ cat grep_linpack_gflops.sh
 
 #!/bin/bash

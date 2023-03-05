@@ -21,7 +21,7 @@ to saturate file system IO.
 * 144 Object Storage Servers ( OSS )
 * Connected to Shaheen via 72 Lustre NETwork ( LNET ) router service nodes
 * IOR benchmarks amount of data moved in a fixed time ( 60 seconds ) using 1152 nodes
-* https://github.com/farhanma/hpe/tree/opt/shaheen2/ior/sonexion
+* [IOR binary and a sample SLURM script](https://github.com/farhanma/hpe/tree/opt/shaheen2/ior/sonexion)
 
 ### Useful commands
 
@@ -64,6 +64,10 @@ LUSTRE=${LUSTRE:-${IOR_FILEPATH}}
 # SLURM job ID or shell's process ID
 JOBID=`basename ${SLURM_JOB_ID:-$$} .sdb`
 # total number of active OSTs
+#   lfs df    report Lustre filesystem disk usage
+#     -h      print output in a human readable format
+#   grep OST:
+#   wc -l     print the newline counts
 NOST=`lfs df -h ${LUSTRE:-.} | grep OST: | wc -l`
 
 if (( $NOST == 0 ))
@@ -81,6 +85,9 @@ TESTDIR=${OUT_FILEPATH}/testdir.${JOBID}
 
 rm -rf ${TESTDIR} && mkdir -p ${TESTDIR}
 
+# lfs setstripe - set striping pattern of a file or directory default
+#   --stripe-size    number of bytes to store on each OST before moving to the next OST
+#   -c               number  of  OSTs  to  stripe  a file over
 lfs setstripe --stripe-size 1m -c 1 ${TESTDIR}
 
 # standard options: POSIX file per process
@@ -108,7 +115,10 @@ srun --ntasks=${RANKS} \
      ${IOR_FILEPATH}/bin/ior \
         ${OPTIONS} -o ${TESTDIR}/IOR_file < /dev/null >> ${BASE}.IOR
 
-# summary of IOR output
+# grep summary of IOR output
+#   ^             regular expression special character marks the start of a line
+#   $             regular expression special character marks the end   of a line
+#   grep ^Max     grep any line starting with Max
 echo " "
 grep ^Max ${BASE}.IOR || echo " ERROR: IOR did not complete"
 echo " "
