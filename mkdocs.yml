@@ -26,6 +26,6 @@ theme:
 nav:
   - index.md
   - 'Shaheen II':
-    - shaheen2/ior.md
     - shaheen2/hpl.md
+    - shaheen2/ior.md
 
