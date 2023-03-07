@@ -131,4 +131,313 @@ $ sbatch ior-sonexion_slurm.sh [<number_of_seconds> <ior_dir_path>]
 
 ### `/lustre2/project`
 
+* Lustre Parallel file system
+* 3392 disks ( 16 TB each disk )
+* Storage capacity: ~37 PB
+* I/O Throughput: ~120 GB/s
+* [IOR binary and a sample SLURM script](https://github.com/farhanma/hpe/tree/opt/shaheen2/ior/e1000)
+* Running IOR on `/project` benchmarks the performance of the Cray ClusterStor E1000
+* Before running IOR on `/project`, make sure a reservation already in place on 128
+  nodes, mounts `/lustre2/project` ( read and write ).
+* Example of a common reservation issue: `ERROR: open64("", , ) failed, (aiori-POSIX.c:440)`
+  * Solution: remove the current reservation and create a new one with different set of nodes
+
 ### Useful commands
+
+```sh
+# download IOR binary and running it using SLURM
+$ cd /scratch/<username>
+$ git clone --single-branch --branch opt https://github.com/farhanma/hpe.git
+$ cd /scratch/farhanma/hpe/shaheen2/ior/e1000
+$ cat ior-e1000_slurm.sh
+
+#!/bin/bash
+
+LAUNCHER_NAME="ior-launcher-rw.sh"
+
+if [ ! -x $LAUNCHER_NAME ]
+then
+   echo "LAUNCHER_NAME=$LAUNCHER_NAME doesn't exist"
+   exit 1
+fi
+
+SLURM_PART='workq'
+SLURM_ACCOUNT='v1003'
+
+# IOR on /project must be ran on a specific reservation that mount /lustre2/project
+# as read/write on the reserved nodes
+SLURM_RESERVATION='rwproject2'
+
+if [ ! -z "$SLURM_RESERVATION" ]
+then
+  SLURM_RES_ARG="--reservation=$SLURM_RESERVATION"
+else
+  unset SLURM_RES_ARG
+fi
+
+if [ ! -z "$SLURM_ACCOUNT" ]
+then
+  SLURM_ACC_ARG="--account=$SLURM_ACCOUNT"
+else
+  unset SLURM_ACC_ARG
+fi
+
+NODES=128
+PPN=32
+NP=$(( $NODES * $PPN ))
+
+RESULTS_DIR=./RESULTS
+
+if [ ! -d $RESULTS_DIR ]
+then
+  mkdir $RESULTS_DIR
+fi
+
+OUT_FPATH=./output.`date +"%Y%m%d-%H%M%S"`
+
+rm -rf ${OUT_FPATH} && mkdir -p ${OUT_FPATH}
+
+OUTFILE=${OUT_FPATH}/out-ior-${NODES}-nodes-${NODES}x${PPN}-$NP-procs-job-%J.ior
+
+sbatch \
+  --comment="$TEST_NAME" --cpu-freq=Performance --hint=compute_bound \
+  -d singleton --exclusive -J "ior_pj" -m block  --nodes=$NODES \
+  --ntasks-per-node=$PPN -p $SLURM_PART $SLURM_RES_ARG --wait-all-nodes=1 \
+  --time=01:00:01 $SLURM_ACC_ARG -o $OUTFILE ./$LAUNCHER_NAME
+
+$ cat ior-launcher-rw.sh
+
+#!/bin/bash
+
+echo "#######################################################"
+echo $0 launched on `hostname` at `date`
+echo "#######################################################"
+echo
+
+set | grep ^SLURM
+
+echo "------------------------------"
+echo
+echo " slurm job $SLURM_JOBID at `date`"
+echo "$0 launched on `hostname` $*"
+echo
+echo "------------------------------"
+
+IOR_BIN=./bin/ior
+if [ ! -x $IOR_BIN ]
+then
+  echo "ERROR: IOR_BIN=$IOR_BIN not found"
+  exit 1
+fi
+
+IOR_OUT_DIR=/lustre2/project/v1003/farhanma/ior-project/ior_rw_dir
+
+if [ ! -d $IOR_OUT_DIR ]
+then
+  mkdir $IOR_OUT_DIR
+fi
+
+# pointless, if mkdir failed:
+if [ ! -d $IOR_OUT_DIR ]
+then
+  echo "ERROR: IOR_OUT_DIR=$IOR_OUT_DIR does not exist"
+  exit 1
+fi
+
+pushd $IOR_OUT_DIR && rm -f $IOR_OUT_DIR/iorfile.bin*
+popd
+
+lfs setstripe -c 1 -i -1 -S 1M $IOR_OUT_DIR
+lfs getstripe $IOR_OUT_DIR
+
+#------------------------------------
+# pre-create the files in a balanced way:
+#------------------------------------
+
+fs_name=`lfs getname $IOR_OUT_DIR | cut -d- -f1`
+ost_count=`lfs osts $IOR_OUT_DIR| grep UUID | grep ACTIVE | wc -l`
+
+file_count=$SLURM_NTASKS
+for x in `seq 0 $(( $file_count - 1 ))`
+do
+  index=$(( $x % $ost_count ))
+  rm -f $IOR_OUT_DIR/iorfile.bin.${x}
+  ior_rank_index=`printf "%08d" $x`
+  lfs setstripe -c 1 -i $index -S 1M $IOR_OUT_DIR/iorfile.bin.${ior_rank_index}
+done
+#------------------------------------
+# end-precreate
+#------------------------------------
+
+STW_STATUS_FILE=$IOR_OUT_DIR/STW_status.file.txt
+rm -f $STW_STATUS_FILE
+
+SECONDS=0
+echo "==============================================================="
+echo "STARTING: Job $SLURM_JOBID on `hostname` - `date` - `date +%s` "
+echo "==============================================================="
+
+set -x
+
+srun $IOR_BIN -v -w -k -E -k -F -C -a POSIX -D 360 --posix.odirect -i 1 -b 16g \
+              -t 64m -g -k -e -o $IOR_OUT_DIR/iorfile.bin
+
+srun $IOR_BIN -v -r -k -E -k -F -C -a POSIX -D 90 --posix.odirect -i 1 -b 2g \
+              -t 64m -g -k -e -o $IOR_OUT_DIR/iorfile.bin
+
+set +x
+
+echo "==============================================================="
+echo "FINISHED: Job $SLURM_JOBID - runtime: $SECONDS sec"
+echo "==============================================================="
+
+pushd $IOR_OUT_DIR && rm -f $IOR_OUT_DIR/iorfile.bin*
+
+# to submit IOR job to SLURM
+$ ./ior-e1000_slurm.sh
+```
+
+### MetaData Test ( MDTest )
+
+It is an MPI-based application for evaluating the metadata performance of a file
+system and has been designed to test parallel file systems. MDTest specifically
+tests the peak metadata rates of storage systems under different directory
+structures. MDTest processes run in parallel across several nodes in a cluster
+to saturate file system IO. MDTest creates directory trees of arbitrary depth
+and can be directed to create a mixture of workloads.
+
+MDTest binary and a sample SLURM script can be downloaded from:
+https://github.com/farhanma/hpe-docs/tree/opt/mdtest
+
+### Useful commands
+
+```sh
+# download IOR binary and running it using SLURM
+$ cd /scratch/<username>
+$ git clone --single-branch --branch opt https://github.com/farhanma/hpe.git
+$ cd /scratch/farhanma/hpe/shaheen2/mdtest/e1000
+$ cat mdtest-e1000_slurm.sh
+
+#!/bin/bash
+
+#!/bin/bash
+
+SLURM_PART="slurm"
+
+TEST_NAME="mdt"
+
+LAUNCHER_NAME="mdtest-launcher.sh"
+
+if [ ! -x $LAUNCHER_NAME ]
+then
+   if [ -e $LAUNCHER_NAME ]
+   then
+     echo "LAUNCHER_NAME=$LAUNCHER_NAME exists, but is NOT executable"
+     exit 1
+   else
+     echo "LAUNCHER_NAME=$LAUNCHER_NAME does not exist"
+     exit 1
+   fi
+fi
+
+SLURM_PART='workq'
+SLURM_ACCOUNT='v1003'
+
+# MDTest on /project must be ran on a specific reservation that mount /lustre2/project
+# as read/write on the reserved nodes
+SLURM_RESERVATION='rwproject2'
+
+if [ ! -z "$SLURM_RESERVATION" ]
+then
+  SLURM_RES_ARG="--reservation=$SLURM_RESERVATION"
+else
+  unset SLURM_RES_ARG
+fi
+
+if [ ! -z "$SLURM_ACCOUNT" ]
+then
+  SLURM_ACC_ARG="--account=$SLURM_ACCOUNT"
+else
+  unset SLURM_ACC_ARG
+fi
+
+NODES=64 #128
+PPN=32
+NP=$(( $NODES * $PPN ))
+
+OUT_FPATH=./output.`date +"%Y%m%d-%H%M%S"`
+
+rm -rf ${OUT_FPATH} && mkdir -p ${OUT_FPATH}
+
+OUTFILE=${OUT_FPATH}/out-mdtest-${NODES}-nodes-${NODES}x${PPN}-$NP-procs-job-%J.ior
+
+sbatch --comment="$TEST_NAME" \
+-d singleton --exclusive -J "$TEST_NAME" -m block \
+--nodes=$NODES --ntasks-per-node=$PPN  -p $SLURM_PART $SLURM_RES_ARG \
+--wait-all-nodes=1 --time=00:45:01 $SLURM_ACC_ARG --cpu-freq=Performance --hint=compute_bound \
+-o $OUTFILE \
+./$LAUNCHER_NAME
+
+$ cat mdtest-launcher.sh
+
+#!/bin/bash
+
+echo =================================================
+set | grep ^SLURM_
+echo =================================================
+
+
+MDTEST_BIN=./bin/mdtest
+if  [ ! -x $MDTEST_BIN ]
+then
+  echo "ERROR: MDTEST_BIN=$MDTEST_BIN is not executable"
+  exit 1
+fi
+
+MDTEST_DIR=/lustre2/project/v1003/farhanma/ior-project/mdtest-dir_${SLURM_JOBID}
+
+mkdir $MDTEST_DIR
+
+if [ ! -d $MDTEST_DIR ]
+then
+  echo "ERROR: MDTEST_DIR=$MDTEST_DIR can not be created"
+  exit 1
+fi
+
+lfs setstripe -c 1 -i -1 -S 1M $MDTEST_DIR
+
+lfs setdirstripe -D -c -1 -i -1 $MDTEST_DIR || ( echo "ERROR: setdirstripe default failed" ; exit 1 )
+
+echo "--------------------------------------------------------"
+echo "--DNE2 dirstripe of $MDTEST_DIR"
+echo "--------------------------------------------------------"
+set -x
+  lfs getdirstripe $MDTEST_DIR
+set +x
+echo "--------------------------------------------------------"
+if [ -d $MDTEST_DIR/test-dir.0-0 ]
+then
+  set -x
+  lfs getdirstripe $MDTEST_DIR/test-dir.0-0
+  set +x
+fi
+echo "--------------------------------------------------------"
+
+TOTAL_FILES=$(( 1 * 1024 * 1024 ))
+FILES_PER_RANK=$(( $TOTAL_FILES / $SLURM_NPROCS ))
+
+MDTEST_ARGS="-v -p 10 -F -d $MDTEST_DIR -i 1 -n $FILES_PER_RANK -L -u"
+
+mdtest_starttime=`date +%s`
+echo "---------------------------------------------------------------------"
+set -x
+  srun $MDTEST_BIN $MDTEST_ARGS
+set +x
+mdtest_endtime=`date +%s`; mdtest_runtime=$(( $mdtest_endtime - $mdtest_starttime ))
+echo "---------------------------------------------------------------------"
+echo "- Job $SLURM_JOBID - mdtest took: $mdtest_runtime seconds"
+echo "---------------------------------------------------------------------"
+
+# to submit IOR job to SLURM
+$ ./mdtest-e1000_slurm.sh
+```
