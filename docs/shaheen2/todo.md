@@ -15,7 +15,8 @@ title: ToDo
 
 - HPL on `c3-3c1s12,c5-3c0s5` ( `nid0[6448-6451,6740-6743]` )
   * `c3-3c1s12`: `nid06448` -- possible faulty DIMM
-  * `c5-3c0s5`: trimming failed -- warm swap
+    * Needs to be drained
+  * `c5-3c0s5`: trimming failed -- warm swapped ( March 10 )
 - IOR performance on `/scratch`
   * Salesforce parent case number: 5368683366
   * Salesforce elevated case number: 5368684957, ID: SIE256662
