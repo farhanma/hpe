@@ -151,7 +151,7 @@ to download the scripts from: https://github.com/farhanma/hpe/tree/opt/shaheen2/
 $ ssh gateway1
 $ cd /scratch/<username>
 $ git clone --single-branch --branch opt https://github.com/farhanma/hpe.git
-$ cd /scratch/farhanma/hpe/shaheen2/trimming
+$ cd /scratch/farhanma/hpe/shaheen2/trimming/workload
 
 # export SLURM environment variables to make them accessible by xtvrmscreen
 $ export SLURM_RESERVATION=rt46392 # reservation in place
