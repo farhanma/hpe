@@ -26,7 +26,9 @@ theme:
 nav:
   - index.md
   - 'Shaheen II':
-    - shaheen2/hpl.md
     - shaheen2/warmswap.md
+    - shaheen2/rt-ticket.md
+    - shaheen2/trimming.md
     - shaheen2/scrum.md
+    - shaheen2/hpl.md
     - shaheen2/ior.md
