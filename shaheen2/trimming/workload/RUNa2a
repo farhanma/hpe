@@ -1,0 +1,140 @@
+#!/usr/bin/env python
+###############################################################################
+# Copyright 2016 Cray Inc. All Rights Reserved.
+#
+# RUNa2a - a wrapper script that can be used to quickly run the RUNa2a test list using WTS 
+#
+# author: Pete Halseth
+#
+# Usage:
+# -------
+# ./RUNa2a 
+# 
+################################################################################
+##@package workload
+# a basic script to run the WTS RUNa2a test 
+
+
+import os,time,xtsystest 
+from optparse import OptionParser
+
+FULL_PATH_TO_CUR_DIR = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+FULL_PATH_TO_UTIL_DIR = FULL_PATH_TO_CUR_DIR + "/util"
+
+try:
+        from workload.util import system_configuration
+except:
+        sys.path.append(os.path.abspath(FULL_PATH_TO_CUR_DIR + "/.."))
+        from workload.util import system_configuration 
+sysconfig = system_configuration.BaseConfig.factory()
+
+## method to parse commandline options  
+def process_commandline_options():
+    user_options = {}
+    parser = OptionParser(usage="%prog [-h] [-i INI_FILE_PATH] [-c CNAME] [-d WORKROOT] [-l MAXLOOPS] [-u USERNAME] [-p PASSWORD] [-s SMW_HOSTNAME] [-t PARTITION] [-x CNAMEEXCLUSIONS] [--version]", version="%prog 1.0")
+    
+    parser.add_option("-i","--ini",dest="input_file_path",default=None,
+            help="path to custom ini file")
+    
+    parser.add_option("-c","--cname",dest="cname",default=None,
+        help="a cname value representing the system resources to target")
+
+    parser.add_option("-d","--workroot",dest="workRoot",default=None,
+        help="user specified work and log output directory")
+
+    parser.add_option("-l","--loops",dest="maxLoops",default=None,
+        help="allows setting a limit on the maximum number of iterations")
+    
+    parser.add_option("-u","--username",dest="uname",default=None,
+        help="the username to use to connect to the SMW")
+    
+    parser.add_option("-p","--password",dest="passwd",default=None,
+        help="the password to use to connect to the SMW")
+    
+    parser.add_option("-s","--smw_hostname",dest="smw_hostname",default=None,
+        help="the SMW hostname")
+    
+    parser.add_option("-t","--partition",dest="partition",default=None,
+        help="a name of the partition to target")
+
+    parser.add_option("-x","--exclude",dest="cnameExclusions",default=None,
+        help="a cname value representing the system resources to exclude")
+    
+    (options, args) = parser.parse_args()
+    if options:
+        user_options['input_file_path']=options.input_file_path
+        user_options['cname']=options.cname
+        user_options['cname_exclusions']=options.cnameExclusions
+        user_options['max_loops']=options.maxLoops
+        user_options['username']=options.uname
+        user_options['password']=options.passwd
+        user_options['destination_hostname']=options.smw_hostname
+        user_options['partition']=options.partition
+        user_options['work_root']=options.workRoot
+
+    return user_options
+
+if __name__ == '__main__':
+ 
+    username = None
+    passwd = None
+    destination_hostname = None
+    cur_time = time.strftime("%Y%m%d%H%M") 
+    smw_log_root = "/var/opt/cray/log/p0-current"
+    cur_logfile_name = smw_log_root + "/pcimon_a2a." + cur_time
+    pcimon_start_command = "/opt/cray/hss/default/bin/xtpcimon -l " + cur_logfile_name + " -v -i 30 p0 > /dev/null &" 
+    pcimon_pid_command =  "ps -aef | grep " + cur_logfile_name + " | grep -v grep | awk '{print $2}'" 
+    pcimon_stop_command = "kill -9 PID > /dev/null"  
+    xtpe_command = "/opt/cray/hss/default/bin/xtpe " + cur_logfile_name + " > /dev/null"
+    cat_results_command = "cat " + cur_logfile_name + ".errors"
+
+    user_options = process_commandline_options()
+    if not ("input_file_path" in user_options and user_options['input_file_path']):
+        user_options['input_file_path'] = FULL_PATH_TO_CUR_DIR + "/runa2a_knl.ini"
+    
+    if user_options['username'] and user_options['password']:
+        username = user_options['username']
+        passwd = user_options['passwd']
+    elif user_options['username']:
+        (username,passwd) = sysconfig.get_smw_info(user_options['username'])
+    else:
+        (username,passwd) = sysconfig.get_smw_info()
+    
+    if user_options['destination_hostname']:
+        destination_hostname = user_options['destination_hostname']
+    else:
+        destination_hostname = sysconfig.get_smw_name() 
+    
+    if username and passwd:
+        #1. start xtpcimon, and have it log to a particular file
+        ssh_command = "ssh " + username + "@" + destination_hostname + " \"" + pcimon_start_command + "\""
+        print " Starting pcimon on " + destination_hostname
+        response = sysconfig.run_ssh_command(ssh_command,passwd)
+   
+    #2. run xta2a
+    user_options['max_loops'] = "1"
+    xtsystest.MODULE_CONFIG['user_options'] = user_options
+    xtsystest.main(xtsystest.MODULE_CONFIG['user_options']) 
+			
+    if username and passwd:
+        #3. upon completion of xta2a, get the PID of the particular instance of xtpcimon
+        ssh_command = "ssh " + username + "@" + destination_hostname + " \"" + pcimon_pid_command + "\""
+        PID = sysconfig.run_ssh_command(ssh_command,passwd)
+        
+        #4. stop the particular instance of xtpcimon
+        print " Killing pcimon on " + destination_hostname
+        ssh_command = "ssh " + username + "@" + destination_hostname + " \"" + pcimon_stop_command.replace("PID",PID) + "\""
+        response = sysconfig.run_ssh_command(ssh_command,passwd)
+
+        #4. use xtpe to extract the errors from that particular log file to an error log
+        ssh_command = "ssh " + username + "@" + destination_hostname + " \"" + xtpe_command + "\""
+        #print " extracting errors using xtpe on " + destination_hostname
+        response = sysconfig.run_ssh_command(ssh_command,passwd)
+        time.sleep(5)
+
+        #5. display the entirety of the extracted errors from the previous step
+        ssh_command = "ssh " + username + "@" + destination_hostname + " \"" + cat_results_command + "\""
+        print " Results from xtpe on " + destination_hostname
+        results = sysconfig.run_ssh_command(ssh_command,passwd)
+        print str(results)
+    
