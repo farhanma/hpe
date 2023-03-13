@@ -32,3 +32,10 @@ nav:
     - shaheen2/scrum.md
     - shaheen2/hpl.md
     - shaheen2/ior.md
+
+markdown_extensions:
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+      #clickable_checkbox: true
