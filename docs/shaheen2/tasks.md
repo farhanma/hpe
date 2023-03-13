@@ -1,5 +1,5 @@
 ---
-title: TaskList
+title: Tasks
 ---
 
 - [ ] IOR performance on `/project`
