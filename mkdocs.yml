@@ -25,10 +25,11 @@ theme:
         name: Switch to system preference
 nav:
   - index.md
-  - ibex
+  - 'ibex': 
+    - ibex/tasks.md
   - 'Shaheen 2':
-    - shaheen2/warmswap.md
     - shaheen2/rt-ticket.md
+    - shaheen2/warmswap.md
     - shaheen2/trimming.md
     - shaheen2/tasks.md
     - shaheen2/hpl.md
