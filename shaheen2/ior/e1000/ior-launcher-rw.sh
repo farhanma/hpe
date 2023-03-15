@@ -1,18 +1,19 @@
 #!/bin/bash
 
-echo "#######################################################"
+echo "#########################################################################"
 echo $0 launched on `hostname` at `date`
-echo "#######################################################"
+echo "#########################################################################"
 echo
 
 set | grep ^SLURM
 
-echo "------------------------------"
+echo "-------------------------------------------------------------------------"
 echo
 echo " slurm job $SLURM_JOBID at `date`"
 echo "$0 launched on `hostname` $*"
 echo
-echo "------------------------------"
+echo "-------------------------------------------------------------------------"
+echo
 
 IOR_BIN=./bin/ior
 if [ ! -x $IOR_BIN ]
@@ -21,7 +22,8 @@ then
 	exit 1
 fi
 
-IOR_OUT_DIR=/lustre2/project/v1003/farhanma/ior-project/ior_rw_dir
+IOR_FILEPATH=${1:-/lustre2/project/v1003/farhanma/}
+IOR_OUT_DIR=${IOR_FILEPATH}/ior_rw_dir
 
 if [ ! -d $IOR_OUT_DIR ]
 then
@@ -71,10 +73,10 @@ echo "==============================================================="
 set -x
 
 srun $IOR_BIN -v -w -k -E -k -F -C -a POSIX -D 360 --posix.odirect -i 1 -b 16g \
-							-t 64m -g -k -e -o $IOR_OUT_DIR/iorfile.bin
+              -t 64m -g -k -e -o $IOR_OUT_DIR/iorfile.bin
 
 srun $IOR_BIN -v -r -k -E -k -F -C -a POSIX -D 90 --posix.odirect -i 1 -b 2g \
-							-t 64m -g -k -e -o $IOR_OUT_DIR/iorfile.bin
+              -t 64m -g -k -e -o $IOR_OUT_DIR/iorfile.bin
 
 set +x
 

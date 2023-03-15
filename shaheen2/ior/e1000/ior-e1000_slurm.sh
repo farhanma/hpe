@@ -43,8 +43,10 @@ rm -rf ${OUT_FPATH} && mkdir -p ${OUT_FPATH}
 
 OUTFILE=${OUT_FPATH}/out-ior-${NODES}-nodes-${NODES}x${PPN}-$NP-procs-job-%J.ior
 
+IOR_FILEPATH=${1:-/lustre2/project/v1003/farhanma/}
+
 sbatch \
 	--comment="$TEST_NAME" --cpu-freq=Performance --hint=compute_bound \
 	-d singleton --exclusive -J "ior_pj" -m block  --nodes=$NODES \
 	--ntasks-per-node=$PPN -p $SLURM_PART $SLURM_RES_ARG --wait-all-nodes=1 \
-	--time=01:00:01 $SLURM_ACC_ARG -o $OUTFILE ./$LAUNCHER_NAME
+	--time=01:00:01 $SLURM_ACC_ARG -o $OUTFILE ./$LAUNCHER_NAME ${IOR_FILEPATH}
