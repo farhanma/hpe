@@ -30,13 +30,6 @@ NODES=128
 PPN=32
 NP=$(( $NODES * $PPN ))
 
-RESULTS_DIR=./RESULTS
-
-if [ ! -d $RESULTS_DIR ]
-then
-	mkdir $RESULTS_DIR
-fi
-
 OUT_FPATH=./output.`date +"%Y%m%d-%H%M%S"`
 
 rm -rf ${OUT_FPATH} && mkdir -p ${OUT_FPATH}
