@@ -10,7 +10,7 @@ fi
 
 SLURM_PART='workq'
 SLURM_ACCOUNT='v1003'
-SLURM_RESERVATION='rwproject2'
+SLURM_RESERVATION='rwproject'
 
 if [ ! -z "$SLURM_RESERVATION" ]
 then
