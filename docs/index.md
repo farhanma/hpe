@@ -76,4 +76,12 @@ For full documentation visit [mkdocs.org](https://www.mkdocs.org).
 
 # query the group
 getent group hpe
+
+    dn: cn=hpe,ou=users,dc=hpc,dc=kaust,dc=edu,dc=sa
+    changetype: modify
+    add: memberUid
+    memberUid: x_wauligp
+    memberUid: x_judgeha
+    memberUid: x_thorbej
+    memberUid: x_venkatm
 ```
