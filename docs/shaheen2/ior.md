@@ -13,15 +13,17 @@ to saturate file system IO.
 
 ### `/lustre/scratch`
 
-* Lustre Parallel file system
-* 5988 disks ( 4 TB per disk )
-* Storage capacity: ~17.2 PB
-* I/O Throughput: ~500 GB/s
-* 72 Scalable Storage Units ( SSU )
-* 144 Object Storage Servers ( OSS )
-* Connected to Shaheen via 72 Lustre NETwork ( LNET ) router service nodes
-* IOR benchmarks amount of data moved in a fixed time ( 60 seconds ) using 1152 nodes
-* [IOR binary and a sample SLURM script](https://github.com/farhanma/hpe/tree/opt/shaheen2/ior/sonexion)
+- Lustre Parallel file system
+- 12 cabinets interconnected by FDR InfiniBand
+    - 6 Scalable Storage Units ( SSU )/cabinet -> so, in total is 72
+        - 5988 SAS disk drives ( 4 TB per disk drive ); 82 disks per SSU
+- Storage capacity: ~17.2 PB
+- Fine Grained Routing
+- I/O Throughput: ~500 GB/s
+- 144 Object Storage Servers ( OSS )
+- Connected to Shaheen via 73 Lustre NETwork ( LNET ) router service nodes
+- IOR benchmarks amount of data moved in a fixed time ( 60 seconds ) using 1152 nodes
+- [IOR binary and a sample SLURM script](https://github.com/farhanma/hpe/tree/opt/shaheen2/ior/sonexion)
 
 ### Useful commands
 

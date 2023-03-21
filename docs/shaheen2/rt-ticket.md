@@ -26,7 +26,7 @@ c7-2c0s4n0
 └───cabinet {0..9}
 
 # useful script to handle multiple nids
-$ NIDS=`scontrol show hostnames nid0[5100-5103,5820-5823]`; for nid in $NIDS; do nid2str $nid | sed 's/.\{2\}$//' ; done | sort -u
+$ NIDS=`scontrol show hostnames nid0[5100-5103,5820-5823]`; for nid in $NIDS; do nid2str $nid | sed 's/.\{2\}$//'; done | sort -u
 
 c0-3c0s15
 c6-2c1s11
