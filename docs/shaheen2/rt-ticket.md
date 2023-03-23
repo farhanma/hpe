@@ -14,7 +14,8 @@ title: KSL RT ticket
 - Existing scripts available, e.g., `nid2str`, `str2nid`, and `nid2blade`, to
   get a list of the component name ( blade id ) and/or node id.
 - Existing SLURM commands can be used to query the status of a reservation,
-e.g., `scontrol show res rt46431`, `sinfo -T`,  and `squeue -w nid0[6448-6451,6740-6743]`
+  e.g., `scontrol show res rt46431`, `sinfo -T`,  and
+  `squeue -w nid0[6448-6451,6740-6743]`
 
 ``` sh title="Description of the component name" hl_lines="3-9"
 $ nid2str nid05200

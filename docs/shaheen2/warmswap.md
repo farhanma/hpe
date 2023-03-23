@@ -2,40 +2,39 @@
 title: Warm swap
 ---
 
-- Cray XC-40 warm swap procedure on `smw2` ( Shaheen2 ) `smw3` ( TDS ( Osprey ) )
-    - SMW: System Management Workstation
+- Cray XC-40 warm swap procedure on System Management Workstation ( SMW )
+    - `ssh smw2` ( _Shaheen2_ )
+    - `ssh smw3` ( _Osprey_ -- Test and Development System ( TDS ) )
 - Warm swap procedure is done on blade(s) for hardware repair work or without
   carrying out any repair work
 - Once you receive an email from the KSL RT ticketing system that "drained on
   blade(s) has begun", you can start with the warm swap operation
+- The procedures are for compute blades not service blades
 
-```sh
-$ ssh smw2
-
-# Check the blade type -- the procedures are for compute blades not service
-# blades, for example
-
+```sh title="Check the blade type" hl_lines="3-11 15-23"
 $ xtcli status c8-3c2s3
-    Network topology: class 2
-    Network type: Aries
-               Nodeid: Service  Core Arch|  Comp state      [Flags]
-    --------------------------------------------------------------------------------
-           c8-3c2s3n0:       -  HW32  X86|       ready      [noflags|]
-           c8-3c2s3n1:       -  HW32  X86|       ready      [noflags|]
-           c8-3c2s3n2:       -  HW32  X86|       ready      [noflags|]
-           c8-3c2s3n3:       -  HW32  X86|       ready      [noflags|]
-    --------------------------------------------------------------------------------
+
+Network topology: class 2
+Network type: Aries
+           Nodeid: Service  Core Arch|  Comp state      [Flags]
+--------------------------------------------------------------------------------
+       c8-3c2s3n0:       -  HW32  X86|       ready      [noflags|]
+       c8-3c2s3n1:       -  HW32  X86|       ready      [noflags|]
+       c8-3c2s3n2:       -  HW32  X86|       ready      [noflags|]
+       c8-3c2s3n3:       -  HW32  X86|       ready      [noflags|]
+--------------------------------------------------------------------------------
 
 $ xtcli status c8-3c0s0
-    Network topology: class 2
-    Network type: Aries
-               Nodeid: Service  Core Arch|  Comp state      [Flags]
-    --------------------------------------------------------------------------------
-           c8-3c0s0n0: service           |       empty      [noflags|]
-           c8-3c0s0n1: service  SB08  X86|       ready      [noflags|]
-           c8-3c0s0n2: service  SB08  X86|       ready      [noflags|]
-           c8-3c0s0n3: service           |       empty      [noflags|]
-    --------------------------------------------------------------------------------
+
+Network topology: class 2
+Network type: Aries
+           Nodeid: Service  Core Arch|  Comp state      [Flags]
+--------------------------------------------------------------------------------
+       c8-3c0s0n0: service           |       empty      [noflags|]
+       c8-3c0s0n1: service  SB08  X86|       ready      [noflags|]
+       c8-3c0s0n2: service  SB08  X86|       ready      [noflags|]
+       c8-3c0s0n3: service           |       empty      [noflags|]
+--------------------------------------------------------------------------------
 
 # note "Service" column
 #   -           compute node
