@@ -1,0 +1,56 @@
+#!/usr/bin/perl
+
+use Net::LDAP;
+
+$num_args = $#ARGV + 2;
+if ($num_args != 4) {
+  print "Usage: add_ip_to_sshd_config <user> <ip> <rule>\n";
+  exit;
+}
+
+$user=$ARGV[0];
+$ip=$ARGV[1];
+$rule=$ARGV[2];
+
+if ($rule =~ /^admin$/i) {
+  print "user can ssh to the login node and HPCM VM admin node\n"
+}
+elsif ($rule =~ /^cs$/i) {
+  print "user can ssh to the login node\n"
+}
+else {
+  die "unknown rule\n"
+}
+
+
+my $login = (getpwuid $>);
+die "must run as root" if $login ne 'root';
+
+if (not $ip=~ m/\./) {
+  die "incorrect IP address\n"
+}
+
+$passwd = unpack "u", ")8VUD969A=6QT";
+$ldap = Net::LDAP->new( 'x3110c0s17b0n0' );
+$result = $ldap->bind( "cn=admin,dc=hpc,dc=kaust,dc=edu,dc=sa",
+                       password => "$passwd" );
+$result->code && die $result->error;
+
+$result = $ldap->search ( base   => "ou=users,dc=hpc,dc=kaust,dc=edu,dc=sa",
+                          filter => "(uid=$user)" );
+$entry = $result->entry(0);
+if (not defined $entry) {
+  die "user with this ID doesn't exist\n";
+}
+
+$uid = $entry->get_value( uid );
+
+system( "ssh x3110c0s18b0n0 'echo 'AllowUsers $uid\@$ip' >> /etc/ssh/sshd_config'" );
+
+if ($rule =~ /^admin$/i) {
+  system( "ssh orbit33 'echo 'AllowUsers $uid\@$ip' >> /etc/ssh/sshd_config'" );
+}
+
+$ldap->unbind;
+
+print "$uid with IP address ( $ip ) has been added to /etc/ssh/sshd_config\n"
