@@ -71,13 +71,17 @@ A2A_LOGS=${LOGS_DIR}/mpi-a2a.${TODAY}
 make_directory ${A2A_LOGS}
 
 cd ${MPI_A2A_DIR} && rm -rf *.o* && rm -rf *.e* && rm -rf *.txt
-FILE=mpi-a2a-1node-aggr.${TODAY}
-touch ${FILE}
+FILE1=mpi-a2a-1node-aggr.${TODAY}
+touch ${FILE1}
 
-# TODO: include slot 1 and slot 6 once they have been integrated into SLURM
+FILE4=mpi-a2a-4node-aggr.${TODAY}
+touch ${FILE4}
+
+# TODO: include blades in slot 1 and slot 6 once they are added into SLURM
 # for i in {0..7}
 for i in 0 {2..5} 7
 do
+  # 1 node
   for j in {0..3}
   do
     NID=x8000c0s${i}b0n${j}
@@ -91,10 +95,18 @@ do
     fi
 
     su farhanma -c "sbatch --ntasks=$((1*96)) -c2 --wait -w ${NID} ${MPI_A2A_SLURM}"
-    echo $NID >> ${FILE}
-    tail mpi_alltoall.o* | awk '/byte_size/{print}/MPI_Alltoall/{print}' >> ${FILE}
+    echo $NID >> ${FILE1}
+    tail mpi_alltoall.o* | awk '/byte_size/{print}/MPI_Alltoall/{print}' >> ${FILE1}
     mv *.o* ${A2A_LOGS} && mv *.e* ${A2A_LOGS} && mv *.txt ${A2A_LOGS}
   done
+
+  # 4 nodes ( 1 blade )
+  NID=x8000c0s${i}b0n[0-3]
+  su farhanma -c "sbatch --ntasks=$((4*96)) -c2 --wait -w ${NID} ${MPI_A2A_SLURM}"
+  echo $NID >> ${FILE4}
+  tail mpi_alltoall.o* | awk '/byte_size/{print}/MPI_Alltoall/{print}' >> ${FILE4}
+  mv *.o* ${A2A_LOGS} && mv *.e* ${A2A_LOGS} && mv *.txt ${A2A_LOGS}
 done
 
-mv ${FILE} ${A2A_LOGS}
+mv ${FILE1} ${A2A_LOGS}
+mv ${FILE4} ${A2A_LOGS}
