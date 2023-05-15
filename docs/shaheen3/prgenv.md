@@ -49,10 +49,9 @@ $ ln -s /lustre/AMD /opt/AMD
 $ cm node show -n x3110c0s[17-18]b0n0 -I
 ```
 
-```sh
-# on the login node
-$ cd /etc/cray-pe.d
-$ grep -ri /sw cray-pe*
+```sh title="Example of adding a new modulefile"
+# on the login node, i.e., x3110c0s18b0n0
+$ cd /etc/cray-pe.d && grep -ri /sw cray-pe*
 
 $ vi cray-pe-configuration.csh
 
@@ -63,8 +62,30 @@ $ vi cray-pe-configuration.sh
 mpaths="/sw/tds108genoa/modulefiles /sw/ex108genoa/modulefiles"
 
 # copying files from login node to compute image override section
-
+# on the HPCM admin node
 $ scp x3110c0s18b0n0:/etc/cray-pe.d/cray-pe-config* /opt/clmgr/image/overrides/kaust-compute-cos-cpe-boysenberry/etc/cray-pe.d/
-
+# deploy the changes to all compute nodes
 $ pdcp -w x8000c0s0b0n[0-3] /opt/clmgr/image/overrides/kaust-compute-cos-cpe-boysenberry/etc/cray-pe.d/cray* /etc/cray-pe.d/
+```
+
+```sh title="Example for adding aocc-compiler module file"
+# on the compute node
+$ rpm2cpio aocc-compiler-3.2.0.sles15-1.x86_64.rpm | cpio -idmv
+$ module use /opt/cray/pe/modulefiles
+$ cd /opt/AMD && craypkg-gen -m /opt/AMD/aocc-compiler-3.2.0 -o /opt/cray/
+$ module switch PrgEnv-cray PrgEnv-aocc
+$ cc --version
+
+...
+
+# Then we need to copy the newly created module file to all nodes and images
+# on the HPCM admin node
+$ cd /opt/clmgr/image/overrides/kaust-compute-cos-cpe-boysenberry/etc/cray-pe.d
+$ scp -r x3110c0s18b0n0:/opt/cray/modulefiles/aocc/ /tmp/
+$ pdcp -r -w x3110c0s17b0n0,x8000c0s0b0n[0-3] /tmp/aocc/ /opt/cray/modulefiles
+$ mkdir -p opt/cray/modulefiles/
+$ cp -r /tmp/aocc opt/cray/modulefiles/
+$ cd /opt/clmgr/image/images/kaust_slurm_cos_boysenberry_non_mountain/
+$ mkdir -p opt/cray/modulefiles/
+$ cp -r /tmp/aocc opt/cray/modulefiles/
 ```
