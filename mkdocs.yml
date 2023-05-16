@@ -37,6 +37,7 @@ nav:
   - 'Shaheen 3':
     - shaheen3/tasks.md
     - shaheen3/prgenv.md
+    - shaheen3/amd_uprof.md
 
 markdown_extensions:
   - pymdownx.arithmatex:
