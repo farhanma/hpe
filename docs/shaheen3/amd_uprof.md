@@ -2,8 +2,7 @@
 title: AMD uProf
 ---
 
-#
-
+- http://192.48.187.132:9965/system/wiki
 - http://192.48.187.132:9965/system/wiki/Config/AMDuProf-Install
 - https://www.amd.com/en/developer/uprof.html
 
