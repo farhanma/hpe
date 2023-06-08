@@ -34,5 +34,3 @@ Shaheen II HPL binary and a sample SLURM script can be downloaded from:
 https://github.com/farhanma/hpe/tree/opt/shaheen2/hpl. Use `git` to clone the
 HPL binary branch in your `/scratch` home directory:
 `git clone --single-branch --branch opt https://github.com/farhanma/hpe.git`.
-
-`squeue -u <shaheen_username>`
