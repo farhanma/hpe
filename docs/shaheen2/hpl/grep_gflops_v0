@@ -1,0 +1,3 @@
+#!/bin/bash
+
+cat *nid* | egrep -A 1 -i 'node|Maximal|pass' | grep -e Node -e Maximal -e 55000
