@@ -7,7 +7,7 @@ LINear Algebra PACKage (LINPACK) benchmarks to measure the computing power of
 a system's floating-point.
 
 ```math title="Theoretical GFLOPS equation"
-GFLOPS = GHz x num_cores x num_IPC x num_sockets x num_nodes
+GFLOPS = GHz * num_cores * num_IPC * num_sockets * num_nodes
 ```
 
 ```math title="Theoretical GFLOPS of the Shaheen II Intel Haswell compute node"
