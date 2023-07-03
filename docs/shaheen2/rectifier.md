@@ -4,7 +4,7 @@ title: Rectifiers
 
 ## Rectifier map
 
-```sh tile="Rectifier map"
+```sh title="Rectifier map"
 $ xtcheckhss --rec --cab
 
                                                slot
