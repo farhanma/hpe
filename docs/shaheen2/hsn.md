@@ -2,77 +2,33 @@
 title: Trimming
 ---
 
-If LINPACK performance on a node does not match the minimum expected performance
-( `~935 GFLOPS` ), then it needs to be trimmed by executing Cray Workload Test
-Suite ( WTS )
+This is a Technical Work Instruction “TWI” document on repairing HSN link issues.
 
-Before start trimming, [create a KSL RT ticket requesting for reservation on the nodes to be trimmed](rt-ticket.md).
+This repair procedure is usually done once a link has failed on the HSN. A SEC mail alert will be generated or the daily KAUST Shaheen report will highlight link issues.
 
-The performance of the nodes needs to be benchmarked via [HPL](#hpl.md) before
-and after the trimming, for the following reasons:
+xtchecklink
+xtchecklink -S
+check_hsn
+dcnu -i # Check Fault End Points
 
-  - Pre-trimming: to confirm the reported low HPL performance
-  - Post-trimming: to confirm the successfulness of the trimming procedure
+## Cable types
 
-Report the post-trimming HPL results in email to KSL updating the RT ticket.
-
-The trimming python script can be run from Shaheen's `gateway` nodes. The script
-is installed in `/opt/cray/diag/workload/xtvrmscreen`. However, as a best practice,
-it's recommended to download the most recent scripts from: https://github.com/farhanma/hpe/tree/opt/shaheen2/trimming
-
-```sh
-$ ssh gateway1
-$ cd /scratch/<username>
-$ git clone --single-branch --branch opt https://github.com/farhanma/hpe.git
-$ cd /scratch/farhanma/hpe/shaheen2/trimming/workload
-
-# export SLURM environment variables to make them accessible by xtvrmscreen
-$ export SLURM_RESERVATION=rt46392 # reservation in place
-$ export SLURM_ACCOUNT=v1003       # HPE account on Shaheen II
-$ export SLURM_PARTITION=all
-$ export OMP_STACKSIZE=128M
-
-# modify shell resource limits
-#   -s unlimited    set the maximum stack size no limit
-$ ulimit -s unlimited
-
-# trimming procedures take long time, and thus it's recommended to attach it with
-# a shell screen
-# screen manager ( interactive shell )
-#   -L               turn on output logging
-#   -S <sockname>    session name ( <pid>.sockname )
-#   -ls              list all of the screen sessions
-#   -x               attach to a not detached screen
-$ screen -L -S <sockname>
-# to exit screen without termination: ctrl+A ctrl+D
-$ screen -ls
-# to reattach to the existing trimming screen
-$ screen -x <pid>.sockname
-# or you can your trimming id
-$ VAR=`screen -ls | grep trimming | awk '{print $1}'` && screen -x $VAR
-
-# run xtvrmscreen iterations
-$ ./xtvrmscreen -s smw2 -c <blade_id0>,<blade_id1>,...,<blade_idn>
-```
-
-If trimming procedures fail, then you may check the hardware logs, for a possible
-hardware failure, e.g., high DIMM error count, CPU issue, ... etc.
-
-```sh
-$ ssh smw2
-$ logs
-
-# /var/opt/cray/log/p0-current
-$ xthwerrlog -M -i -f hwerrlog.p0-20230301t162823 -C c3-3c1s12
-
-Node         Count     Chan  Type           DIMM   BIT(s)  Detail
------------------------------------------------------------------------------
-c3-3c1s12n0  642       0     CORRECTABLE    J4002          Read Error
-c3-3c1s12n0  40671590  0     CORRECTABLE    J4002  DQ19    Memory Scrub Error
-c3-3c1s12n0  2570      0     CORRECTABLE    J4002  DQ19    Read Error
-
-Node          Socket  Count    Bank                  Type
----------------------------------------------------------------
-c3-3c1s12n0   1       642      8   (HA 1)            CORRECTABLE
-c3-3c1s12n0   1       19101384 13  (iMC 4)           CORRECTABLE
-```
+- Back plane
+  - Color is green
+  - Both endpoints are in the same cage
+  - Example: `rxLink c4-3c1s13a0l36 <-- remote txLink c4-3c1s5a0l43`
+  - Warm swap out blades and move them to different cabinets and slot locations
+    often clears the link errors
+- Copper
+  - Color is black
+  - Both endpoints are in the same cabinet group but different cages
+  - Example: `rxLink c8-1c2s12a0l10 <-- remote txLink c9-1c0s12a0l11`
+  - Replace dead HSN Component
+  - Reseat, move, and replace sick HSN Component
+- Active Optical Cable ( AOC )
+  - Color is blue
+  - Both endpoints are in different cabinet groups
+  - Example: `rxLink c3-2c0s15a0l04 <-- remote txLink c5-2c0s15a0l04`
+  - `rtr --connector-link-map=<component_name>`
+  - `xtwarmswap --remove-cable <cable_endpoint>`
+  - `xtwarmswap --add-cable <cable_endpoint> [--linktune]`
