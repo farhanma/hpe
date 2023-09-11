@@ -1,3 +1,4 @@
+```sh title="Lustre Networking ( LNet )"
 - Lustre Networking ( LNet ) to support the various types of networks
     - Low-level device layer ( Lustre Network Driver ( LND ) )
         - Pluggable driver module
@@ -35,4 +36,5 @@
           for the initial connection with a peer. After the initial connection,
           the o2ib LND uses only RDMA for all further communications. By default,
           socklnd uses TCP port 988 to create connections, and this must not be
-          blocked by any firewalls.
+          blocked by any firewalls
+```
