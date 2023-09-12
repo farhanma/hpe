@@ -1,9 +1,9 @@
 ```sh title="Lustre Networking ( LNet )"
-- Lustre Networking ( LNet ) to support the various types of networks
-    - Low-level device layer ( Lustre Network Driver ( LND ) )
-        - Pluggable driver module
-        - Provides an interface abstraction between the upper level LNet protocol
-          and the kernel device driver for the network interface
+- Lustre Networking ( LNet ) supports various types of networks via Low-level
+  device layer ( Lustre Network Driver ( LND ) )
+  - Pluggable driver module
+  - Provides an interface abstraction between the upper-level LNet protocol and
+    and the kernel device driver for the network interface
     - Each low-level network protocol requires a separate LND
     - If the server requires access to more than one type of network, then
       multiple LNDs can be active on a host simultaneously
