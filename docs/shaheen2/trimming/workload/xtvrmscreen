@@ -1,0 +1,826 @@
+#!/usr/bin/env python
+###############################################################################
+# Copyright 2014-2015 Cray Inc. All Rights Reserved.
+#
+# xtvrmscreen - a script that can be used to quickly run the WTS xtvrm_screen_tests 
+#
+# author: Pete Halseth, Andrew Litt
+#
+# Usage:
+# -------
+# ./xtvrmscreen
+#
+################################################################################
+##@package workload
+# a basic script to run the WTS xtvrm_screen_tests
+
+import os,xtsystest
+from optparse import OptionParser, SUPPRESS_HELP
+
+import json,numpy,csv,tarfile,shutil,time
+import tempfile
+
+FULL_PATH_TO_CUR_DIR = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+FULL_PATH_TO_UTIL_DIR = FULL_PATH_TO_CUR_DIR + "/util"
+
+RESULT_ITER_PREFIX = "xtvrm_node_results_iter"
+RESULT_POST_PREFIX = "xtvrm_node_results_post_"
+RESULT_SUFFIX = ".json"
+REPORTFILENAME_PREFIX = "xtvrm_node_report_"
+REPORTFILENAME_SUFFIX = ".txt"
+VERIFYFILENAME_PREFIX = "xtvrm_node_verify_"
+VERIFYFILENAME_SUFFIX = ".txt"
+POWERMAXFILENAME_PREFIX = "xtvrm_node_power_max_"
+POWERMAXFILENAME_SUFFIX = ".csv"
+TEMP0MAXFILENAME_PREFIX = "xtvrm_node_temp_max_cpu0_"
+TEMP0MAXFILENAME_SUFFIX = ".csv"
+TEMP1MAXFILENAME_PREFIX = "xtvrm_node_temp_max_cpu1_"
+TEMP1MAXFILENAME_SUFFIX = ".csv"
+PERFORMANCEFILENAME_PREFIX = "xtvrm_node_performance_"
+PERFORMANCEFILENAME_SUFFIX = ".csv"
+POWERTIMEFILENAME_PREFIX = "xtvrm_node_power_timeseries_"
+POWERTIMEFILENAME_SUFFIX = ".csv"
+TEMPTIMEFILENAME_PREFIX = "xtvrm_node_temp_timeseries_"
+TEMPTIMEFILENAME_SUFFIX = ".csv"
+
+temp_sensor_dict = {}
+temp_sensor_dict['1300'] = "n0_cpu0"
+temp_sensor_dict['1301'] = "n0_cpu1"
+temp_sensor_dict['1302'] = "n1_cpu0"
+temp_sensor_dict['1303'] = "n1_cpu1"
+temp_sensor_dict['1304'] = "n2_cpu0"
+temp_sensor_dict['1305'] = "n2_cpu1"
+temp_sensor_dict['1306'] = "n3_cpu0"
+temp_sensor_dict['1307'] = "n3_cpu1"
+
+try:                                                                                                                            
+    from workload.util import system_configuration
+except:
+    sys.path.append(os.path.abspath(os.path.dirname(os.path.realpath(__file__))) + "/../..")
+    from workload.util import system_configuration
+sysconfig = system_configuration.BaseConfig.factory()
+
+# results processing
+
+def get_result_json(filename):
+    result = []
+    if os.path.isfile(filename):
+        with open(filename, 'r') as resultfile:
+            result = json.loads(resultfile.read())
+    return result
+
+def get_bin_stats(results):
+    """Generate min, max, mean, and standard deviation on screen results
+    Args:
+        Full results structure imported from xtvrm_screen_test JSON
+    Returns:
+        Dict by cpubrand of dicts by socket# of dicts by stat type
+    """
+    stats= {}
+    report_bins = {}
+    for result in results[1]:
+        sku_bins = report_bins.setdefault(sysconfig.cpubrand_filter(result[u"CPUBRAND"]), {})
+        sku_socket_bins = sku_bins.setdefault(result[u"SOCKET"], [])
+        sku_socket_bins.append(float(result[u"BIN"]))
+    for skukey in report_bins:
+        stats[skukey] = {}
+        for socketkey in report_bins[skukey]:
+            stats[skukey][socketkey] = {}
+            stats[skukey][socketkey][u"AVG"] = numpy.mean(report_bins[skukey][socketkey])
+            stats[skukey][socketkey][u"MIN"] = numpy.amin(report_bins[skukey][socketkey])
+            stats[skukey][socketkey][u"MAX"] = numpy.amax(report_bins[skukey][socketkey])
+            stats[skukey][socketkey][u"STD"] = numpy.std(report_bins[skukey][socketkey])
+    return stats
+
+def gen_fail_lists(results_all,data_key,low_window_key=None,high_window_key=None,low_result_key=None,high_result_key=None,margin=0.0):
+    """Generate set of sockets that have result value data_key
+    outside the window defined by window keys low_window_key/high_window key
+    or a key in the result record low_result_key/high_result_key
+    Args:
+        results_all: Full results structure imported from xtvrm_screen_test JSON
+        data_key: result record key for data to compare
+        low_window_key: lower limit based on a key in the window definition
+        high_window_key: upper limit based on a key in the window definition
+        low_result_key: lower limit based on a key in the same result record
+        high_result_key: upper limit based on a key in the same result record
+        margin: margin on both ends of the limit.  positive values shrink the
+            range of valid values
+    Returns:
+        tuple (below, above, missing) of sets of sockets falling below and above
+        the fail window, with missing being a set of sockets that were not parseable
+        due to missing limit or data keys
+    """
+    below = set()
+    above = set()
+    missing = set()
+
+    windows = results_all[2]
+    results = results_all[1]
+
+    if not (low_window_key or high_window_key or low_result_key or high_result_key):
+        raise Exception, 'No fail limit key arguments given'
+
+    for result in results:
+        if data_key in result:
+            if low_window_key:
+                if windows[sysconfig.cpubrand_filter(result[u"CPUBRAND"])][result[u"SOCKET"]][low_window_key]:
+                    if float(result[data_key]) < float(windows[sysconfig.cpubrand_filter(result[u"CPUBRAND"])][result[u"SOCKET"]][low_window_key]) + margin:
+                        below.add(result[u"CNAME"] + ":" + result[u"SOCKET"] + " = " + result[data_key])
+                else:
+                    missing.add(result[u"CNAME"] + ":" + result[u"SOCKET"])
+            if high_window_key:
+                if windows[sysconfig.cpubrand_filter(result[u"CPUBRAND"])][result[u"SOCKET"]][high_window_key]:
+                    if float(result[data_key]) > float(windows[sysconfig.cpubrand_filter(result[u"CPUBRAND"])][result[u"SOCKET"]][high_window_key]) - margin:
+                        above.add(result[u"CNAME"] + ":" + result[u"SOCKET"] + " = " + result[data_key])
+                else:
+                    missing.add(result[u"CNAME"] + ":" + result[u"SOCKET"])
+            if low_result_key:
+                if result[low_result_key]:
+                    if float(result[data_key]) < float(result[low_result_key]) + margin:
+                        below.add(result[u"CNAME"] + ":" + result[u"SOCKET"] + " = " + result[data_key])
+                else:
+                    missing.add(result[u"CNAME"] + ":" + result[u"SOCKET"])
+            if high_result_key:
+                if result[high_result_key]:
+                    if float(result[data_key]) > float(result[high_result_key]) - margin:
+                        above.add(result[u"CNAME"] + ":" + result[u"SOCKET"] + " = " + result[data_key])
+                else:
+                    missing.add(result[u"CNAME"] + ":" + result[u"SOCKET"])
+        else:
+            missing.add(result[u"CNAME"] + ":" + result[u"SOCKET"])
+    return (below,above,missing)
+
+def gen_verify_report(file,path,timestamp):
+    """Read results from screens and generate a list of all tested
+    sockets along with their bins and respective failure windows
+    Args:
+        file: file handle to write report to
+        path: path to result files from screen runs
+        timestamp: timestamp for screen runs
+    Returns:
+        None
+    """
+    results_post = get_result_json(path + "/" + RESULT_POST_PREFIX + timestamp + RESULT_SUFFIX)
+
+    for result in results_post[1]:
+        sku = sysconfig.cpubrand_filter(result[u"CPUBRAND"])
+        window = results_post[2][sku][result[u"SOCKET"]]
+        file.write(result[u"CNAME"] + ":" + result[u"SOCKET"] + " = " + result[u"BIN"]
+                    + " ( " + sku + ":" + result[u"SOCKET"]
+                    + "  > " + str(window[u"fail_below"])
+                    + "  < " + str(window[u"fail_above"]) + " )\n" )
+
+def gen_final_report(file,path,timestamp,post_only=False):
+    """Read results from screens and create report
+    Args:
+        file: file handle to write report to
+        path: path to result files from screen runs
+        timestamp: timestamp for screen runs
+        post_only: do not print data requiring iter1,iter2,iter3 results.
+                   omits PRE_ statistics and missing socket data
+    Returns:
+        None
+    Notes:
+    """
+    if not post_only:
+        results_iter = []
+        for i in range(0,(user_options['trim_iterations'])):
+            results_iter.append(get_result_json(path + "/" + RESULT_ITER_PREFIX + str(i + 1) + "_" +  timestamp + RESULT_SUFFIX))
+    else:
+        results_iter = None
+
+    results_post = get_result_json(path + "/" + RESULT_POST_PREFIX + timestamp + RESULT_SUFFIX)
+
+    file.write("VRM Trim Report " + str(timestamp) + "\n")
+    file.write("------------------------------------------------------------\n")
+    if not post_only:
+        file.write("\n-----------------------\n")
+        file.write("Info\n")
+        file.write("-----------------------\n\n")
+
+        min_limit = set()
+        max_limit = set()
+
+        for result in results_iter[len(results_iter) - 1][1]:
+            if u"TRIM_LIMIT" in result and result[u"TRIM_LIMIT"] == "-1":
+                min_limit.add((result[u"CNAME"] + ":" + result[u"SOCKET"] + " = " + result[u"BIN"]))
+            if u"TRIM_LIMIT" in result and result[u"TRIM_LIMIT"] == "1":
+                max_limit.add((result[u"CNAME"] + ":" + result[u"SOCKET"] + " = " + result[u"BIN"]))
+
+        file.write("At or below lower trim limit: \n")
+        if len(min_limit) <= 0:
+            file.write("none\n\n")
+        else:
+            file.write(u"\n".join(sorted(min_limit)))
+            file.write("\n\n")
+        file.write("At or above upper trim limit: \n")
+        if len(max_limit) <= 0:
+            file.write("none\n\n")
+        else:
+            file.write(u"\n".join(sorted(max_limit)))
+            file.write("\n\n")
+
+    file.write("\n-----------------------\n")
+    file.write("Faults\n")
+    file.write("-----------------------\n\n")
+    (fail_below, fail_above, fail_missing) = gen_fail_lists(results_post,"BIN",low_window_key=u"fail_below",high_window_key=u"fail_above")
+    file.write("Final bin below limit for SKU (bin range fail):\n")
+    if len(fail_below) <= 0:
+        file.write("none\n\n")
+    else:
+        file.write(u"\n".join(sorted(fail_below)))
+        file.write("\n\n")
+
+    file.write("Final bin above limit for SKU (bin range fail):\n")
+    if len(fail_above) <= 0:
+        file.write("none\n\n")
+    else:
+        file.write(u"\n".join(sorted(fail_above)))
+        file.write("\n\n")
+
+    if fail_missing:
+        file.write("WARNING: Final bin limit data unavailable for the following sockets:\n")
+        file.write(u"\n".join(sorted(fail_missing)))
+        file.write("\n\n")
+
+    (node_power_below, node_power_above, node_power_missing) = gen_fail_lists(results_post,"NODE_POWER_MAX",high_window_key=u"node_pwr_max_limit")
+
+    if len(node_power_missing) < (len(results_post) ):
+        if len(node_power_missing) > 0:
+            file.write("Nodes missing power data:\n")
+            file.write(u"\n".join(sorted(node_power_missing)))
+            file.write("\n\n")
+
+        file.write("Node power above default:\n")
+        if len(node_power_above) <= 0:
+            file.write("none\n\n")
+        else:
+            node_power_above_nodes = set([nodesocket.split(':')[0] for nodesocket in node_power_above])
+            file.write(u"\n".join(sorted(node_power_above_nodes)))
+            file.write("\n\n")
+    else:
+        file.write("Node power above default:\n")
+        file.write("node power data not available\n\n")
+
+    #check for temps above and below the threshold. 
+    (temp_below, temp_above, temp_missing) = gen_fail_lists(results_post,"SOCKET_TEMP_MAX",high_result_key=u"TCRIT[C]",margin=6)
+    
+    if len(temp_missing) < (len(results_post) ):
+        if len(temp_missing) > 0:
+            file.write("Nodes missing socket temperature:\n")
+            file.write(u"\n".join(sorted(temp_missing)))
+            file.write("\n\n")
+
+        file.write("Critical socket temperature exceeded:\n")
+        if len(temp_above) <= 0:
+            file.write("none\n\n")
+        else:
+            file.write(u"\n".join(sorted(temp_above)))
+            file.write("\n\n")
+    else:
+        file.write("Critical socket temperature exceeded:\n")
+        file.write("temperature data not available in SEDC (bc_cpu_temps)\n\n")
+
+    if not post_only:
+        missed = set()
+        returned = []
+        results_list = results_iter
+        results_list.append(results_post)
+
+        for results in results_list:
+            returned.append(set([result[u"CNAME"] + ":" + result[u"SOCKET"] for result in results[1]]))
+
+        returned_superset=set.union(*returned)
+        for returned_subset in returned:
+            missed.update( returned_superset.difference(returned_subset))
+        file.write("Missed in one or more results:\n")
+        if len(missed) <= 0:
+            file.write("none\n\n")
+        else:
+            file.write(u"\n".join(sorted(missed)))
+            file.write("\n\n")
+    else:
+        missed = set()
+
+    file.write("-----------------------\n")
+    file.write("Per-SKU statistics\n")
+    file.write("-----------------------\n")
+    if results_iter and results_iter[0]:
+        stats_pre = get_bin_stats(results_iter[0])
+    stats_post = get_bin_stats(results_post)
+    stats_columns = [ u"MIN", u"AVG", u"STD" ]
+    windows_columns = [ (u"FAIL_LO","fail_below"),
+                        (u"FAIL_HI","fail_above") ]
+    header_formatter = "{name:>9}"
+    column_formatter = "{col:> 9.2f}"
+    skuskt_formatter = "{sku:>20}  {skt:>1} : "
+
+    file.write("       SKU           SKT  ")
+    for col in stats_columns:
+        if results_iter and results_iter[0]:
+            file.write(header_formatter.format(name="PRE_"+ col))
+        file.write(header_formatter.format(name="POST_"+ col))
+    for col in windows_columns:
+        file.write(header_formatter.format(name=col[0]))
+    file.write("\n")
+
+    for skukey in sorted(stats_post):
+        for socketkey in sorted(stats_post[skukey]):
+            file.write(skuskt_formatter.format(sku=skukey, skt=socketkey))
+            for column in stats_columns:
+                if results_iter and results_iter[0]:
+                    file.write(column_formatter.format(col=stats_pre[skukey][socketkey][column]))
+                file.write(column_formatter.format(col=stats_post[skukey][socketkey][column]))
+            for column in windows_columns:
+                file.write(column_formatter.format(col=results_post[2][skukey][socketkey][column[1]]))
+            file.write("\n")
+    file.write("\n-----------------------\n")
+    file.write("Summary\n")
+    file.write("-----------------------\n\n")
+    if not post_only:
+        file.write("{n:6d} Trim min/max limit exceeded (info only)\n".format(n=(len(min_limit) + len(max_limit))))
+    file.write("{n:6d} Bin range failures\n".format(n=(len(fail_below) + len(fail_above))))
+    file.write("{n:6d} Sockets in nodes over TDP\n".format(n=(len(node_power_above))))
+    file.write("{n:6d} Critical temperature exceeded failures\n".format(n=(len(temp_above))))
+    if not post_only:
+        file.write("{n:6d} Missed in results failures\n".format(n=(len(missed))))
+    # total the unique failing sockets over all the bin limits, node power,
+    # and non-reporting (missed) sockets during any of the operations
+    total_fail_set = set([])
+    for failing_socket in set.union(fail_below, fail_above, node_power_above, temp_above, missed):
+        total_fail_set.add(failing_socket.split(" = ")[0])
+    file.write("{n:6d} Total failures\n".format(n=len(total_fail_set)))
+    file.write("{n:6d} Total processed\n".format(n=(len(results_post[1]))))
+    file.write("------------------------------------------------------------\n")
+
+# Used to process the .json files provided by WTS so they are in a format usable
+# when testing the trim process. Provides performance, temperature, and power
+# data (max and vs. time) for the run
+################################################################################
+def post_process_results():
+    logRoot= xtsystest.MODULE_CONFIG['work_root'] + "/xtvrm_node_test"
+    timestmp = xtsystest.MODULE_CONFIG['session_timestamp']
+
+    tarfile_name = logRoot + "/" + "xtvrmscreen_" + timestmp + ".tar.gz"
+    tempdir_name = logRoot + "/" + "xtvrmscreen_" + timestmp
+
+    TEMP0MAXFILENAME     = tempdir_name + "/" + TEMP0MAXFILENAME_PREFIX + timestamp + TEMP1MAXFILENAME_SUFFIX
+    TEMP1MAXFILENAME     = tempdir_name + "/" + TEMP1MAXFILENAME_PREFIX + timestamp + TEMP1MAXFILENAME_SUFFIX
+    POWERMAXFILENAME    = tempdir_name + "/" + POWERMAXFILENAME_PREFIX + timestamp + POWERMAXFILENAME_SUFFIX
+    PERFORMANCEFILENAME = tempdir_name + "/" + PERFORMANCEFILENAME_PREFIX + timestamp + PERFORMANCEFILENAME_SUFFIX
+
+    temp_time_series_filestr  = "thermal_time_series"
+    power_time_series_filestr = "power_time_series"
+
+    #create temp dir to store the files before compressing them
+    if not os.path.exists(tempdir_name):
+        os.makedirs(tempdir_name)
+
+    #copy all files from this run to a tmp dir
+    cname_dict = {}
+    for log_filename in os.listdir(logRoot):
+        if (os.path.isfile(logRoot + "/" + log_filename)) and timestmp in log_filename:
+            shutil.copyfile(logRoot + "/" + log_filename, tempdir_name + "/" + log_filename)         
+
+    #process the results json files
+    # information from these json files will be used to generate temp, power, and performance
+    # tables that are separated by SKU type.
+    for name in ["iter1", "iter2", "iter3", "post"]:
+        temp_tempfile_name = tempdir_name + "/max_temp_file_" + name
+        power_tempfile_name = tempdir_name + "/max_power_file_" + name
+        performance_tempfile_name = tempdir_name + "/performance_file_" + name
+
+        file_name = tempdir_name + "/xtvrm_node_results_" + name + "_" + timestamp + ".json"
+        if (os.path.isfile(file_name)):            
+            results = {}
+            with open(file_name) as json_data:
+                json_parsed = json.load(json_data)
+ 
+                #generate a sku dictionary to parse the json data
+                for record in json_parsed[1]:
+                    if record["CPUBRAND"] in cname_dict:
+                        if not record["CNAME"] in cname_dict[record["CPUBRAND"]]:
+                            cname_dict[record["CPUBRAND"]].append(record["CNAME"])
+                    else:
+                        cname_dict[record["CPUBRAND"]] = [(record["CNAME"])] 
+
+                    temp = " "
+                    if "SOCKET_TEMP_MAX" in record:
+                        temp = record["SOCKET_TEMP_MAX"]
+
+                    power = " "
+                    if "NODE_POWER_MAX" in record:
+                        power = record["NODE_POWER_MAX"]
+
+                    perf = " "
+                    if "MINGFLOPS" in record:
+                        perf = record["MINGFLOPS"]
+
+                    if not record["CNAME"] in results:
+                        results[record["CNAME"]] = {}
+
+                    results[record["CNAME"]][record["SOCKET"]] = (temp, power, perf)
+
+                #process the json data, generating a temp file for this test run for
+                # power, temp, and performance.
+                for sku in cname_dict.keys():
+                    temp0_tempfile        = open(temp_tempfile_name + "_0_" + sku + ".csv" , 'w')
+                    temp1_tempfile        = open(temp_tempfile_name + "_1_" + sku + ".csv" , 'w')
+                    power_tempfile       = open(power_tempfile_name + "_" + sku + ".csv" , 'w')
+                    performance_tempfile = open(performance_tempfile_name + "_" + sku + ".csv" , 'w')
+                    
+                    temp0_csvwriter        = csv.writer(temp0_tempfile)
+                    temp1_csvwriter        = csv.writer(temp1_tempfile)
+                    power_csvwriter       = csv.writer(power_tempfile)
+                    performance_csvwriter = csv.writer(performance_tempfile)
+                    
+                    cname_list = cname_dict[sku]
+                    cname_list.sort()
+                    cname_cpu0_list = [s + "_cpu0" for s in cname_list]
+                    cname_cpu1_list = [s + "_cpu1" for s in cname_list]
+                    cname_cpu_list = [j for i in zip(cname_cpu0_list,cname_cpu1_list) for j in i]
+
+                    header = [sku]
+                    header += cname_cpu_list
+
+                    power_header = [sku]
+                    power_header += cname_list
+
+                    temp0_header = [sku]
+                    temp0_header += cname_cpu0_list
+
+                    temp1_header = [sku]
+                    temp1_header += cname_cpu1_list
+
+                    temp0_csvwriter.writerow(temp0_header)
+                    temp1_csvwriter.writerow(temp1_header)
+                    power_csvwriter.writerow(power_header)
+                    performance_csvwriter.writerow(header)
+
+                    temp0_row       = [name]
+                    temp1_row       = [name]
+                    power_row       = [name]
+                    performance_row = [name]
+                    for cname in cname_list:
+                        for socket in ['0', '1']:
+                            (temp, power, perf) = results[cname][socket]
+                            
+                            if socket == "0":
+                                temp0_row.append(temp)
+                                #node power is the same for both sockets, so only post once.     
+                                power_row.append(power)
+                            else:
+                                temp1_row.append(temp)
+
+                            performance_row.append(perf)
+
+                    temp0_csvwriter.writerow(temp0_row)
+                    temp1_csvwriter.writerow(temp1_row)
+                    power_csvwriter.writerow(power_row)
+                    performance_csvwriter.writerow(performance_row)
+
+                    temp0_tempfile.close()
+                    temp1_tempfile.close()
+                    power_tempfile.close()
+                    performance_tempfile.close()
+
+    #process all generated files: combine them all in
+    TEMP0MAXFILE    = open(TEMP0MAXFILENAME, 'w')
+    TEMP1MAXFILE    = open(TEMP1MAXFILENAME, 'w')
+    POWERMAXFILE    = open(POWERMAXFILENAME, 'w')
+    PERFORMANCEFILE = open(PERFORMANCEFILENAME, 'w')
+
+    for sku in cname_dict.keys():
+        temp0_count        = 0
+        temp1_count        = 0
+        power_count       = 0
+        performance_count = 0
+
+        for name in ["iter1", "iter2", "iter3", "post"]:
+            temp0_tempfile_name = tempdir_name + "/max_temp_file_" + name + "_0_" + sku
+            temp1_tempfile_name = tempdir_name + "/max_temp_file_" + name + "_1_" + sku
+            power_tempfile_name = tempdir_name + "/max_power_file_" + name + "_" +  sku
+            performance_tempfile_name = tempdir_name + "/performance_file_" + name + "_" + sku
+
+            #process temp files
+            if (os.path.isfile(temp0_tempfile_name + ".csv")):
+                with open(temp0_tempfile_name + ".csv" , 'r') as temp_tempfile:
+                    #check if we need to add a line header
+                    if temp0_count == 0:
+                        TEMP0MAXFILE.write(temp_tempfile.readline())
+                        temp0_count += 1
+                    else:
+                        temp_tempfile.readline()
+
+                    TEMP0MAXFILE.write(temp_tempfile.readline())
+
+                #delete file once done with it
+                os.remove(temp0_tempfile_name + ".csv")
+
+            if (os.path.isfile(temp1_tempfile_name + ".csv")):
+                with open(temp1_tempfile_name + ".csv" , 'r') as temp_tempfile:
+                    #check if we need to add a line header
+                    if temp1_count == 0:
+                        TEMP1MAXFILE.write(temp_tempfile.readline())
+                        temp1_count += 1
+                    else:
+                        temp_tempfile.readline()
+
+                    TEMP1MAXFILE.write(temp_tempfile.readline())
+
+                #delete file once done with it
+                os.remove(temp1_tempfile_name + ".csv")                        
+
+            #process power file
+            if (os.path.isfile(power_tempfile_name + ".csv")):
+                with open(power_tempfile_name + ".csv" , 'r') as power_tempfile:
+                    #check if we need to add a line header
+                    if power_count == 0:
+                        POWERMAXFILE.write(power_tempfile.readline())
+                        power_count += 1
+                    else:
+                        power_tempfile.readline()
+
+                    POWERMAXFILE.write(power_tempfile.readline())
+
+                #delete file once done with it
+                os.remove(power_tempfile_name + ".csv")                   
+
+            #process performance files
+            if (os.path.isfile(performance_tempfile_name + ".csv")):
+                with open(performance_tempfile_name + ".csv" , 'r') as performance_tempfile:
+                    #check if we need to add a line header
+                    if performance_count == 0:
+                        PERFORMANCEFILE.write(performance_tempfile.readline())
+                        performance_count += 1
+                    else:
+                        performance_tempfile.readline()
+
+                    PERFORMANCEFILE.write(performance_tempfile.readline())
+
+                #delete file once done with it
+                os.remove(performance_tempfile_name + ".csv")                        
+        
+        #write blank line to separate SKUs
+        TEMP0MAXFILE.write(" \n")
+        TEMP1MAXFILE.write(" \n")
+        POWERMAXFILE.write(" \n")
+        PERFORMANCEFILE.write(" \n")
+
+    TEMP0MAXFILE.close()
+    TEMP1MAXFILE.close()
+    POWERMAXFILE.close()
+    PERFORMANCEFILE.close()
+
+    #generate temp time series csv table
+    #####################################
+    temp_time_series_files = {}
+    
+    #open up all the needed files, one per SKU
+    for sku in cname_dict.keys():
+        temp_time_series_filename = tempdir_name + "/" + "xtvrm_node_temp_time_series" + timestamp + "_" + sku + ".csv"
+        temp_time_series_files[sku] = open(temp_time_series_filename, 'w')
+    
+    #read through each file in iteration order to fill in the corresponding
+    #missing files will be skipped, but if a cname without corrisponding SKU is
+    #found, abort and exit
+    for name in ["iter1", "iter2", "iter3", "post"]:
+        for filename in os.listdir(tempdir_name):
+            if temp_time_series_filestr in filename and name in filename:
+                with open(tempdir_name + "/" + filename, 'r') as temp_time_series_file:
+                    file_sku = None
+                    for line in temp_time_series_file:
+                        #determine the SKU this particular file is for 
+                        (cname, junk) = line.split(",", 1)
+                        (cname, node_num) = cname.split("_")
+                        
+                        if file_sku == None:
+                            for sku in cname_dict.keys():
+                                #cnames in the dict have node numbers, the power
+                                # data doesn't
+                                if (cname + "n0") in cname_dict[sku]:
+                                    file_sku = sku
+                                    time_series_file = temp_time_series_files[file_sku]
+                                    break
+                            if file_sku == None:
+                                print "File " + filename + " with cname " + cname + "n0 didn't relate to a known SKU, exiting..."
+                                print "cname_dict: " + str(cname_dict)
+                                quit()
+
+                        time_series_file.write(name + "," + line.replace(node_num , temp_sensor_dict[node_num],1))
+                    
+                    #write blank line to separate runs
+                    time_series_file.write(" \n")
+
+                #delete file once done with it
+                os.remove(tempdir_name + "/" + filename)
+   
+
+    #close all the temperature time series files
+    for sku in cname_dict.keys():
+        temp_time_series_files[sku].close()
+
+    #generate power time series csv table
+    #####################################
+    power_time_series_files = {}
+    
+    #open up all the needed files, one per SKU
+    for sku in cname_dict.keys():
+        power_time_series_filename = tempdir_name + "/" + "xtvrm_node_power_time_series" + timestamp + "_" + sku + ".csv"
+        power_time_series_files[sku] = open(power_time_series_filename, 'w')
+    
+    #read through each file in iteration order to fill in the corresponding
+    #missing files will be skipped, but if a cname without corrisponding SKU is
+    #found, abort and exit
+    for name in ["iter1", "iter2", "iter3", "post"]:
+        for filename in os.listdir(tempdir_name):
+            if power_time_series_filestr in filename and name in filename:
+                with open(tempdir_name + "/" + filename, 'r') as temp_time_series_file:
+                    file_sku = None
+                    for line in temp_time_series_file:
+                        #determine the SKU this particular file is for 
+                        (cname, junk) = line.split(",",1)
+                        (cname, node_num) = cname.split("_")
+                        
+                        if file_sku == None:
+                            for sku in cname_dict.keys():
+                                if cname in cname_dict[sku]:
+                                    file_sku = sku
+                                    time_series_file = power_time_series_files[file_sku]
+                                    break
+                            if file_sku == None:
+                                print "File " + filename + " with cname " + cname + "n0 didn't relate to a known SKU, exiting..."
+                                quit()
+
+                        time_series_file.write(name + "," + line.replace("_" + node_num, "",1))
+                    
+                    #write blank line to separate runs
+                    time_series_file.write(" \n")
+
+                #delete file once done with it
+                os.remove(tempdir_name + "/" + filename)
+    
+    #close all the temperature time series files
+    for sku in cname_dict.keys():
+        power_time_series_files[sku].close()
+
+    #tar up results in the temp dir to keep the xtvrm_node_test dir clean
+    time.sleep(5) #sleep for a short bit to help make sure the files are all finished writing
+    with tarfile.open(tarfile_name, "w:gz") as tar:
+        tar.add(tempdir_name, arcname=os.path.basename(tempdir_name))
+
+    #remove the temp directory, not needed now that it's compressed
+    shutil.rmtree(tempdir_name)
+
+## method to parse commandline options
+def process_commandline_options():
+    user_options = {}
+    parser = OptionParser(usage="%prog [-h] [-c CNAME] [-s SMW] [-u USER] [-n] [-p PATH] [-r PARTITION] [-v] [--version] [-e SECONDS]", version="%prog 2.0")
+
+    parser.add_option("-c","--cname",dest="cname",default=None,
+            help="a cname value representing the system resources to target")
+    parser.add_option("-s","--smw",dest="destination",default=None,
+            help="network name of the SMW associated with this system")
+    parser.add_option("-u","--user",dest="user",default="crayadm",
+            help="username for the SMW")
+    parser.add_option("-n","--notrim",dest="notrim",action="store_true",
+            help="dry run - do not write VRM data to SEEPs")
+    parser.add_option("-p","--remote_path",dest="smw_utils_path",
+            default="/opt/cray/aries/sysdiag/bin",
+            help="path on SMW to xtvrmscreen_smwhelper script")
+    parser.add_option("--test_mode",dest="test_mode_percent",
+            help=SUPPRESS_HELP)
+    parser.add_option("--iterations",dest="trim_iterations",default="3",
+            help=SUPPRESS_HELP) # phase 2 default = 3 iterations of trim + 1 check iteration
+    parser.add_option("-v","--verify_mode",dest="verify_mode", action="store_true",
+            help="perform post-trim verify only and report bins for all sockets")
+    parser.add_option("--ssh_timeout",dest="ssh_timeout",default="600",
+            help="set the timeout in seconds for the SSH trim command to run on the SMW")
+    parser.add_option("-r","--partition",dest="partition",default=None,
+        help="a name of the partition to target")
+    parser.add_option("-e","--seconds",dest="secondsUntilLaunchFailure",default=300,
+        help="user specified number of seconds until test launch failure")
+    parser.add_option("--post_processing",dest="post_processing_mode", action="store_true",
+        help=SUPPRESS_HELP)
+
+    (options, args) = parser.parse_args()
+    if options:
+        user_options['cname']=options.cname
+        user_options['destination']=options.destination
+        user_options['user']=options.user
+        user_options['smw_utils_path']=options.smw_utils_path
+        user_options['test_mode_percent']=options.test_mode_percent
+        user_options['verify_mode']=options.verify_mode
+        user_options['ssh_timeout']=options.ssh_timeout
+        user_options['partition']=options.partition
+        user_options['seconds_until_launch_failure']=options.secondsUntilLaunchFailure
+        user_options['post_processing_mode']=options.post_processing_mode
+
+        if options.verify_mode:
+            user_options['notrim']=True
+        else:
+            user_options['notrim']=options.notrim
+        try:
+            int(options.ssh_timeout,0)
+        except ValueError:
+            print "Invalid timeout value for ssh_timeout"
+            raise
+
+        try:
+            user_options['trim_iterations']=int(options.trim_iterations,0)
+        except ValueError:
+            print "Invalid value for iterations"
+            raise
+        if user_options['trim_iterations'] < 1 or user_options['trim_iterations'] > 3:
+            print "invalid value for iterations, please enter 1, 2, or 3."
+            raise
+
+    return user_options
+
+if __name__ == '__main__':
+
+    user_options = process_commandline_options()
+
+    user_options['no_prompt'] = True
+
+
+    (user_options['first'],user_options['last']) = sysconfig.get_smw_info(user_options['user'])
+    user_options['transfer_results']=True
+    if not user_options['destination']:
+        user_options['destination']=sysconfig.get_smw_name()
+    sysconfig.test_ssh_auth(user_options['destination'], user_options['first'], user_options['last'])
+
+    user_options['blades'] = sysconfig.get_blade_expansion(user_options['destination'], user_options['first'], user_options['last'], user_options['cname'])
+
+    if not user_options['notrim']:
+        xtvrmtrim_last_report_base = "xtvrmtrim_last_rpt_" + str(os.getpid())
+        xtvrmtrim_last_report_smw = "/tmp/" + xtvrmtrim_last_report_base
+        user_options['xtvrmtrim_last_report'] = tempfile.gettempdir() + "/" + xtvrmtrim_last_report_base
+
+        # zero trims on the blades or set to test_mode_percent
+        if user_options['test_mode_percent']:
+            test_percent_validated = float(user_options['test_mode_percent'])
+            if (test_percent_validated < -12.0) or (test_percent_validated > 10.0):
+                print "Test mode percentage of " + str(test_percent_validated) + " is unsupported"
+                raise
+        else:
+            test_percent_validated = None
+        sysconfig.execute_xtvrmscreen_smwhelper(user_options['destination'],user_options['smw_utils_path'],user_options['first'],user_options['last'],user_options['blades'],xtvrmtrim_last_report_smw,dryrun=user_options['notrim'],test_percent=test_percent_validated,timeout=int(user_options['ssh_timeout'],0))
+        sysconfig.execute_trim_apply(user_options['destination'],user_options['first'],user_options['last'],user_options['blades'],timeout=int(user_options['ssh_timeout'],0))
+        sysconfig.transfer_results_from_smw(user_options['destination'], user_options['xtvrmtrim_last_report'], xtvrmtrim_last_report_smw, user_options['first'], user_options['last'])
+
+    if user_options['test_mode_percent'] or user_options['verify_mode']:
+        # test or verify mode, only do post
+        user_options['trim_iterations'] = 0
+
+    total_iterations = user_options['trim_iterations'] + 1
+
+    for trim_iteration in range(1,total_iterations + 1):
+        if trim_iteration > user_options['trim_iterations']:
+            print "Start post-trim iteration"
+            user_options['margin'] = "post"
+            user_options['notrim'] = True
+        else:
+            print "Start trim iteration " + str(trim_iteration)
+            user_options['margin']="iter" + str(trim_iteration)
+            # user_options['notrim'] during trim runs set from args
+
+        user_options['test_order']="xtvrm_node_test"
+        user_options['max_loops']="1"
+        xtsystest.MODULE_CONFIG['user_options'] = user_options
+        xtsystest.main(xtsystest.MODULE_CONFIG['user_options'])
+
+        if trim_iteration > user_options['trim_iterations']:
+            print "End post-trim iteration"
+        else:
+            print "End trim iteration " + str(trim_iteration)
+
+    if 'xtvrmtrim_last_report' in user_options:
+        os.remove(user_options['xtvrmtrim_last_report'])
+
+    log_root= xtsystest.MODULE_CONFIG['work_root'] + "/xtvrm_node_test"
+    timestamp = xtsystest.MODULE_CONFIG['session_timestamp']
+    if user_options['verify_mode']:
+        VERIFYFILENAME = log_root + "/" + VERIFYFILENAME_PREFIX + timestamp + VERIFYFILENAME_SUFFIX
+        with open(VERIFYFILENAME,'w+') as verifyfile:
+            gen_verify_report(verifyfile,log_root,timestamp)
+            verifyfile.flush()
+            verifyfile.seek(0)
+            print "\n\nVerify all socket results:"
+            print verifyfile.read()
+            print "------------------------------------------------------------\n\n"
+
+    REPORTFILENAME = log_root + "/" + REPORTFILENAME_PREFIX + timestamp + REPORTFILENAME_SUFFIX
+    with open(REPORTFILENAME,'w+') as reportfile:
+        gen_final_report(reportfile,log_root,timestamp,
+            post_only = user_options['verify_mode'] or user_options['test_mode_percent'])
+        reportfile.flush()
+        reportfile.seek(0)
+        print reportfile.read()
+
+    if user_options['post_processing_mode']:
+        post_process_results()
+
+    print "Results timestamp = " + timestamp
+
+# vim: set expandtab tabstop=4 shiftwidth=4:

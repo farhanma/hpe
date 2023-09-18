@@ -3,10 +3,12 @@ title: Trimming
 ---
 
 If LINPACK performance on a node does not match the minimum expected performance
-( `~935 GFLOPS` ), then it needs to be trimmed by executing Cray Workload Test
-Suite ( WTS )
+( `~935 GFLOPS` ), then it needs to be trimmed using Cray Workload Test Suite ( WTS )
 
-Before start trimming, [create a KSL RT ticket requesting for reservation on the nodes to be trimmed](rt-ticket.md).
+Before start trimming,
+[create a KSL RT ticket requesting for reservation on the nodes to be trimmed](rt-ticket.md).
+Note that, trimming script requires the nodes to be in the `IDLE+RESERVED` SLURM state
+( not in the `DRAIN` state ).
 
 The performance of the nodes needs to be benchmarked via [HPL](#hpl.md) before
 and after the trimming, for the following reasons:
@@ -18,12 +20,13 @@ Report the post-trimming HPL results in email to KSL updating the RT ticket.
 
 The trimming python script can be run from Shaheen's `gateway` nodes. The script
 is installed in `/opt/cray/diag/workload/xtvrmscreen`. However, as a best practice,
-it's recommended to download the most recent scripts from: https://github.com/farhanma/hpe/tree/opt/shaheen2/trimming
+it's recommended to download the most recent scripts from:
+https://github.com/farhanma/hpe/tree/opt/shaheen2/trimming
 
 ```sh
 $ ssh gateway1
 $ cd /scratch/<username>
-$ git clone --single-branch --branch opt https://github.com/farhanma/hpe.git
+$ git clone https://github.com/farhanma/hpe.git
 $ cd /scratch/farhanma/hpe/shaheen2/trimming/workload
 
 # export SLURM environment variables to make them accessible by xtvrmscreen
@@ -50,6 +53,8 @@ $ screen -ls
 $ screen -x <pid>.sockname
 # or you can your trimming id
 $ VAR=`screen -ls | grep trimming | awk '{print $1}'` && screen -x $VAR
+# or you can just do
+$ screen -x # which will attach to your recent screen session created
 
 # run xtvrmscreen iterations
 $ ./xtvrmscreen -s smw2 -c <blade_id0>,<blade_id1>,...,<blade_idn>

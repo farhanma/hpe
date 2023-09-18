@@ -1,0 +1,408 @@
+{
+	"E5-2690V3@2.60GHZ":
+	{
+		"0":
+		{
+			"bottom": -370,
+			"top": -330,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 12.0,
+			"clamp_low": -12.0,
+			"clamp_high": 8,
+			"fail_below": -420,
+			"fail_above": -280,
+			"node_pwr_max_limit": 450
+		},
+		"1":
+		{
+			"bottom": -355,
+			"top": -315,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 12.0,
+			"clamp_low": -12.0,
+			"clamp_high": 8,
+			"fail_below": -405,
+			"fail_above": -265,
+			"node_pwr_max_limit": 450
+		}
+	},
+	"E5-2680V3@2.50GHZ":
+	{
+		"0":
+		{
+			"bottom": -420,
+			"top": -380,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 12.0,
+			"clamp_low": -12.0,
+			"clamp_high": 8,
+			"fail_below": -470,
+			"fail_above": -330,
+			"node_pwr_max_limit": 450
+		},
+		"1":
+		{
+			"bottom": -405,
+			"top": -365,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 12.0,
+			"clamp_low": -12.0,
+			"clamp_high": 8,
+			"fail_below": -455,
+			"fail_above": -315,
+			"node_pwr_max_limit": 450
+		}
+	},
+	"E5-2698V3@2.30GHZ":
+	{
+		"0":
+		{
+			"bottom": -450,
+			"top": -410,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 12.0,
+			"clamp_low": -12.0,
+			"clamp_high": 8,
+			"fail_below": -500,
+			"fail_above": -360,
+			"node_pwr_max_limit": 450
+		},
+		"1":
+		{
+			"bottom": -435,
+			"top": -395,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 12.0,
+			"clamp_low": -12.0,
+			"clamp_high": 8,
+			"fail_below": -485,
+			"fail_above": -345,
+			"node_pwr_max_limit": 450
+		}
+	},
+	"E5-2695V4@2.10GHZ":
+	{
+		"0":
+		{
+			"bottom": -285,
+			"top": -240,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 12.0,
+			"clamp_low": -12.0,
+			"clamp_high": 8,
+			"fail_below": -335,
+			"fail_above": -190,
+			"node_pwr_max_limit": 450
+		},
+		"1":
+		{
+			"bottom": -275,
+			"top": -230,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 12.0,
+			"clamp_low": -12.0,
+			"clamp_high": 8,
+			"fail_below": -325,
+			"fail_above": -180,
+			"node_pwr_max_limit": 450
+		}
+	},
+	"E5-2697V4@2.30GHZ":
+	{
+		"0":
+		{
+			"bottom": -240,
+			"top": -195,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 12.0,
+			"clamp_low": -12.0,
+			"clamp_high": 8,
+			"fail_below": -290,
+			"fail_above": -145,
+			"node_pwr_max_limit": 450
+		},
+		"1":
+		{
+			"bottom": -235,
+			"top": -190,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 12.0,
+			"clamp_low": -12.0,
+			"clamp_high": 8,
+			"fail_below": -285,
+			"fail_above": -140,
+			"node_pwr_max_limit": 450
+		}
+	},
+	"E5-2699V4@2.20GHZ":
+	{
+		"0":
+		{
+			"bottom": -400,
+			"top": -355,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 12.0,
+			"clamp_low": -12.0,
+			"clamp_high": 8,
+			"fail_below": -450,
+			"fail_above": -305,
+			"node_pwr_max_limit": 450
+		},
+		"1":
+		{
+			"bottom": -385,
+			"top": -345,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 12.0,
+			"clamp_low": -12.0,
+			"clamp_high": 8,
+			"fail_below": -435,
+			"fail_above": -295,
+			"node_pwr_max_limit": 450
+		}
+	},
+	"E5-2697AV4@2.60GHZ":
+	{
+		"0":
+		{
+			"bottom": -360,
+			"top": -320,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 12.0,
+			"clamp_low": -12.0,
+			"clamp_high": 8,
+			"fail_below": -410,
+			"fail_above": -270,
+			"node_pwr_max_limit": 450
+		},
+		"1":
+		{
+			"bottom": -345,
+			"top": -305,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 12.0,
+			"clamp_low": -12.0,
+			"clamp_high": 8,
+			"fail_below": -395,
+			"fail_above": -255,
+			"node_pwr_max_limit": 450
+		}
+	},
+	"E5-2698V4@2.20GHZ":
+	{
+		"0":
+		{
+			"bottom": -320,
+			"top": -280,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 12.0,
+			"clamp_low": -12.0,
+			"clamp_high": 8,
+			"fail_below": -370,
+			"fail_above": -230,
+			"node_pwr_max_limit": 450
+		},
+		"1":
+		{
+			"bottom": -305,
+			"top": -265,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 12.0,
+			"clamp_low": -12.0,
+			"clamp_high": 8,
+			"fail_below": -355,
+			"fail_above": -215,
+			"node_pwr_max_limit": 450
+		}
+	},
+	"E5-2690V4@2.60GHZ":
+	{
+		"0":
+		{
+			"bottom": -260,
+			"top": -220,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 12.0,
+			"clamp_low": -12.0,
+			"clamp_high": 8,
+			"fail_below": -310,
+			"fail_above": -170,
+			"node_pwr_max_limit": 450
+		},
+		"1":
+		{
+			"bottom": -245,
+			"top": -205,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 12.0,
+			"clamp_low": -12.0,
+			"clamp_high": 8,
+			"fail_below": -295,
+			"fail_above": -155,
+			"node_pwr_max_limit": 450
+		}
+	},
+	"GOLD6130@2.10GHZ":
+	{
+		"0":
+		{
+			"bottom": -355,
+			"top": -315,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 18.0,
+			"clamp_low": -10.0,
+			"clamp_high": 10.0,
+			"fail_below": -405,
+			"fail_above": -265,
+			"node_pwr_max_limit": 450
+		},
+		"1":
+		{
+			"bottom": -350,
+			"top": -310,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 18.0,
+			"clamp_low": -10.0,
+			"clamp_high": 10.0,
+			"fail_below": -400,
+			"fail_above": -260,
+			"node_pwr_max_limit": 450
+		}
+	},
+	"GOLD6148@2.40GHZ":
+	{
+		"0":
+		{
+			"bottom": -595,
+			"top": -550,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 18.0,
+			"clamp_low": -10.0,
+			"clamp_high": 10.0,
+			"fail_below": -645,
+			"fail_above": -500,
+			"node_pwr_max_limit": 500
+		},
+		"1":
+		{
+			"bottom": -585,
+			"top": -540,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 18.0,
+			"clamp_low": -10.0,
+			"clamp_high": 10.0,
+			"fail_below": -635,
+			"fail_above": -490,
+			"node_pwr_max_limit": 500
+		}
+	},
+	"GOLD6150@2.70GHZ":
+	{
+		"0":
+		{
+			"bottom": -1000,
+			"top": 0,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 18.0,
+			"clamp_low": -10.0,
+			"clamp_high": 10.0,
+			"fail_below": -1000,
+			"fail_above": 0,
+			"node_pwr_max_limit": 530
+		},
+		"1":
+		{
+			"bottom": -1000,
+			"top": 0,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 18.0,
+			"clamp_low": -10.0,
+			"clamp_high": 10.0,
+			"fail_below": -1000,
+			"fail_above": 0,
+			"node_pwr_max_limit": 530
+		}
+	},
+	"PLATINUM8160@2.10GHZ":
+	{
+		"0":
+		{
+			"bottom": -535,
+			"top": -495,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 18.0,
+			"clamp_low": -10.0,
+			"clamp_high": 10.0,
+			"fail_below": -585,
+			"fail_above": -430,
+			"node_pwr_max_limit": 500
+		},
+		"1":
+		{
+			"bottom": -545,
+			"top": -505,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 18.0,
+			"clamp_low": -10.0,
+			"clamp_high": 10.0,
+			"fail_below": -595,
+			"fail_above": -455,
+			"node_pwr_max_limit": 500
+		}
+	},
+	"PLATINUM8176@2.10GHZ":
+	{
+		"0":
+		{
+			"bottom": -575,
+			"top": -530,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 18.0,
+			"clamp_low": -10.0,
+			"clamp_high": 10.0,
+			"fail_below": -625,
+			"fail_above": -480,
+			"node_pwr_max_limit": 530
+		},
+		"1":
+		{
+			"bottom": -565,
+			"top": -520,
+			"margin_bottom": 15,
+			"margin_top": 0,
+			"mhz_factor": 18.0,
+			"clamp_low": -10.0,
+			"clamp_high": 10.0,
+			"fail_below": -615,
+			"fail_above": -470,
+			"node_pwr_max_limit": 530
+		}
+	}
+}
