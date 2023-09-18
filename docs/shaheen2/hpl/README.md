@@ -12,4 +12,4 @@ a system's floating-point.
     - Sustained LINPACK performance is between `935-955 GFLOPS (~80% of the peak)`
 - Create a KSL RT ticket requesting for reservation on the nodes for exclusive
   use in SLURM
-
+- `sbatch -w nid0xxxx linpack_slurm.sh`
