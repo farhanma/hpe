@@ -20,4 +20,4 @@ export KMP_AFFINITY=nowarnings,scatter,1,0,granularity=fine
 echo "NODE ID:" ${SLURM_JOB_NODELIST}
 echo
 
-./xlinpack_xeon64 lininput_xeon64
+./bin/xlinpack_xeon64 lininput_xeon64
