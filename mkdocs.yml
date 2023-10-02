@@ -24,7 +24,6 @@ theme:
         icon: material/brightness-4
         name: Switch to system preference
 nav:
-  - index.md
   - 'ibex': 
     - ibex/tasks.md
   - 'Shaheen 2':
@@ -34,6 +33,7 @@ nav:
     - shaheen2/rectifier.md
     - shaheen2/tasks.md
     - shaheen2/hpl/README.md
+    - shaheen2/trimming/README.md
     - shaheen2/ior.md
   - 'Shaheen 3':
     - shaheen3/tasks.md

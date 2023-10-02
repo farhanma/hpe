@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+###############################################################################
+# Copyright 2016 Cray Inc. All Rights Reserved.
+#
+# RUNgpu_check - a wrapper script that can be used to quickly scan the RUNgpu logs for errors 
+#
+# author: Pete Halseth
+#
+# Usage:
+# -------
+# ./RUNgpu_check -h 
+# 
+################################################################################
+##@package workload
+# a basic script to check status of the WTS RUNgpu test 
+import xtsystest 
+
+if __name__ == '__main__':
+    xtsystest.process_commandline_options()
+    if not xtsystest.MODULE_CONFIG['user_options']['input_file_path']:
+        xtsystest.MODULE_CONFIG['user_options']['input_file_path'] = xtsystest.FULL_PATH_TO_SCRIPT_DIR + "/rungpu_pascal.ini"
+    xtsystest.MODULE_CONFIG['user_options']['run_report'] = 1 
+    xtsystest.main(xtsystest.MODULE_CONFIG['user_options']) 

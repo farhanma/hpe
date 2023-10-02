@@ -3,23 +3,23 @@ title: Trimming
 ---
 
 If LINPACK performance on a compute node does not match the minimum acceptable
-performance ( i.e., `~935 GFLOPS` ), then it needs to be trimmed using Cray
-Workload Test Suite ( WTS ).
+performance (i.e., `~935 GFLOPS`), then it needs to be trimmed using Cray Workload
+Test Suite (WTS).
 
 - Create a KSL RT ticket requesting for reservation on the nodes to be trimmed
-- Make sure that the nodes' SLURM state is `IDLE+RESERVED` ( not `DRAIN` )
+- Make sure that the nodes' SLURM state is `IDLE+RESERVED` (not `DRAIN`)
 - Run HPL before trimming to confirm the low performance
-- Use Shaheen internal login nodes ( `gateway` ) to perform trimming
+- Use Shaheen internal login nodes (`gateway`) to perform trimming
     - Trimming scripts are installed in `/opt/cray/diag/workload/`
 - Run HPL after the trimming to confirm the trimming successfulness
 - Report the post-trimming HPL results in email to KSL updating the RT ticket
 
 ```sh
 $ ssh farhanma@shaheen.hpc.kaust.edu.sa
-$ cd /scratch/farhanma
-$ git clone https://github.com/farhanma/hpe.git
+$ git clone https://github.com/farhanma/hpe.git /scratch/farhanma/.
 $ ssh gateway1
 $ cd /scratch/farhanma/hpe/docs/shaheen2/trimming/workload
+
 $ export SLURM_RESERVATION=rt46392
 $ export SLURM_ACCOUNT=v1003
 $ export SLURM_PARTITION=all

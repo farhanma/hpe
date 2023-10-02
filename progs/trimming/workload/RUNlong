@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+###############################################################################
+# Copyright 2016 Cray Inc. All Rights Reserved.
+#
+# RUNlong - a wrapper script that can be used to quickly run the RUNlong test list using WTS 
+#
+# author: Pete Halseth
+#
+# Usage:
+# -------
+# ./RUNlong 
+# 
+################################################################################
+##@package workload
+# a basic script to run the WTS RUNlong test 
+
+import xtsystest
+
+if __name__ == '__main__':
+    xtsystest.process_commandline_options()
+    if not xtsystest.MODULE_CONFIG['user_options']['input_file_path']:
+        xtsystest.MODULE_CONFIG['user_options']['input_file_path'] = xtsystest.FULL_PATH_TO_SCRIPT_DIR + "/runlong_knl.ini"
+    xtsystest.main(xtsystest.MODULE_CONFIG['user_options'])
