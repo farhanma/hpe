@@ -1,0 +1,11 @@
+#!/bin/bash
+
+NID="$1"
+
+if ! [[ $NID =~ ^(x[0-9]+c[0-9]+s[0-9]+b0)(n0|n1|n2|n3)?$ ]]; then
+  echo "ERROR: you didn't enter a correct node name"
+fi
+
+BRD="${NID%%b0*}"
+
+echo "${BRD}b0n[0-3]"
