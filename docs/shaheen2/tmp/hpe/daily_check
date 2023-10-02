@@ -1,0 +1,112 @@
+#!/bin/sh
+
+chkdir () {
+  if [ ! -x $1 ]
+  then
+    echo "error: $1 not found"
+    exit 1
+  fi
+}
+
+change_ownership () {
+  chgrp -R hpe  $1
+  chmod -R g+rw $1
+  chmod -R +r   $1
+}
+
+make_directory () {
+  if [ ! -d $1 ]
+  then
+    mkdir $1
+    change_ownership $1
+  fi
+  # pointless, if `mkdir` failed
+  if [ ! -d $1 ]
+  then
+    echo "error: $1 does not exist"
+    exit 1
+  fi
+}
+
+TODAY=`date +"%Y%m%d-%H%M%S"`
+
+ROOT_DIR=/lustre/hpe/admin/daily_check
+chkdir $ROOT_DIR
+
+LOGS_DIR=${ROOT_DIR}/logs
+chkdir ${LOGS_DIR}
+
+################################################################################
+# STREAM
+################################################################################
+
+STREAM_DIR=${ROOT_DIR}/stream
+chkdir ${STREAM_DIR}
+
+STREAM_JOB=${STREAM_DIR}/check.scr
+[ -e ${STREAM_JOB} ] || echo "error: ${STREAM_JOB} does not exist"
+
+cd ${STREAM_DIR} && rm -f stream-triad.* && cd -
+/opt/clmgr/bin/pdsh -w x8000c0s[0-7]b0n[0-3] "cd ${STREAM_DIR} && ${STREAM_JOB}"
+FILE=stream-triad.${TODAY}
+cd ${STREAM_DIR} && echo "NODE HOSTNAME    STREAM TRIAD ( MB/s )" > ${FILE}
+
+STREAM_LOGS_DIR=${LOGS_DIR}/stream.${TODAY}
+make_directory ${STREAM_LOGS_DIR}
+
+cat stream-triad.x8000c0s* >> ${FILE} && mv ${FILE} ${STREAM_LOGS_DIR}/ && cd -
+change_ownership ${STREAM_LOGS_DIR}
+
+################################################################################
+# MPI ALL-TO-ALL
+################################################################################
+
+MPI_A2A_DIR=${ROOT_DIR}/mpi-a2a
+chkdir ${MPI_A2A_DIR}
+
+MPI_A2A_SLURM=${MPI_A2A_DIR}/mpi_alltoall.slurm
+[ -e ${MPI_A2A_SLURM} ] || echo "error: ${MPI_A2A_SLURM} does not exist"
+
+A2A_LOGS=${LOGS_DIR}/mpi-a2a.${TODAY}
+make_directory ${A2A_LOGS}
+
+cd ${MPI_A2A_DIR} && rm -rf *.o* && rm -rf *.e* && rm -rf *.txt
+FILE1=mpi-a2a-1node-aggr.${TODAY}
+touch ${FILE1}
+
+FILE4=mpi-a2a-4node-aggr.${TODAY}
+touch ${FILE4}
+
+# TODO: include blades in slot 1 and slot 6 once they are added into SLURM
+# for i in {0..7}
+for i in 0 {2..5} 7
+do
+  # 1 node
+  for j in {0..3}
+  do
+    NID=x8000c0s${i}b0n${j}
+
+    # NOTE: just for debugging, should be commented out and test all nodes
+    SLURM_STATE=$(env scontrol show node ${NID} | egrep "State=ALLOCATED" | awk '{print $1}' | paste -s -d' \n')
+    if [ ! -z ${SLURM_STATE} ]
+    then
+      echo "${NID} is busy ... skip"
+      continue
+    fi
+
+    su farhanma -c "sbatch --ntasks=$((1*96)) -c2 --wait -w ${NID} ${MPI_A2A_SLURM}"
+    echo $NID >> ${FILE1}
+    tail mpi_alltoall.o* | awk '/byte_size/{print}/MPI_Alltoall/{print}' >> ${FILE1}
+    mv *.o* ${A2A_LOGS} && mv *.e* ${A2A_LOGS} && mv *.txt ${A2A_LOGS}
+  done
+
+  # 4 nodes ( 1 blade )
+  NID=x8000c0s${i}b0n[0-3]
+  su farhanma -c "sbatch --ntasks=$((4*96)) -c2 --wait -w ${NID} ${MPI_A2A_SLURM}"
+  echo $NID >> ${FILE4}
+  tail mpi_alltoall.o* | awk '/byte_size/{print}/MPI_Alltoall/{print}' >> ${FILE4}
+  mv *.o* ${A2A_LOGS} && mv *.e* ${A2A_LOGS} && mv *.txt ${A2A_LOGS}
+done
+
+mv ${FILE1} ${A2A_LOGS}
+mv ${FILE4} ${A2A_LOGS}
