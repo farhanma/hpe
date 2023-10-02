@@ -1,0 +1,8 @@
+#!/bin/sh
+
+lsof -ti:9965 | xargs kill -9
+networksetup -setsocksfirewallproxy Wi-Fi 127.0.0.1 9965
+
+/usr/bin/open -a "/Applications/Google Chrome.app" 'https://gpu202-16-r-mgmt/'
+
+ssh -D 9965 -C farhanma@gpu202-16-r.ibex.kaust.edu.sa

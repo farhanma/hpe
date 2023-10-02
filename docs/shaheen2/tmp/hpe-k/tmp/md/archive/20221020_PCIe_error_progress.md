@@ -1,0 +1,37 @@
+- Uncorrectable PCI Express Error status: 0x40000
+  - 2022.09.28: ran perftest v4.5-0.17 on KAUST environment
+  - 2022.09.29: installed CentOS v7.9 iso obtained from the lab
+    - VBIOS: 92.00.36.00.01
+    - CUDA: 11.4
+    - NVIDIA driver: 470.57.02
+    - MLNX_OFED: 5.1-2.5.8.0
+    - NV-PEER-MEMORY: 1.1
+    - perttest: 4.5-0.14
+    - Mellanox IB card firmware: 20.32.1010
+    - System Rom: A48 v2.56 (02/10/2022)
+  - 2022.10.03: diver and firmware updates
+    - CUDA: 11.5
+    - NVIDIA driver: 495.29.05
+    - MLNX_OFED: 5.6-2.0.9.0
+    - NV-PEER-MEMORY: 1.3-0
+    - perttest: 4.5-0.17
+    - Mellanox IB card firmware: 20.33.1048
+  - 2022.10.04: system ROM is updated to A48 v2.63 (09/15/2022)
+  - 2022.10.06: updated Mellanox IB card firmware to 20.34.1002
+  - 2022.10.10: installed RHEL 8.6
+    - CUDA: 11.8
+    - NVIDIA driver: 520.61.05
+    - MLNX_OFED: 5.7-1.0.2.0
+  - 2022.10.11: installed Open-MPI: 4.4.4, NCCL: 2.15.1-1, and NCCL-test: 2.13.4
+  - 2022.10.12: installed Ubuntu Server 22.04 LTS
+  - 2022.10.13: installed RHEL 9.0
+  - 2022.10.16: installed RHEL 7.9
+  - 2022.10.17: reinstalled RHEL 8.6
+  - 2022.10.18: disabled PCIe slot 10 on both servers
+  - 2022.10.19: ran test as per Mellanox request and collect logs
+  - 2022.10.20: tested unidirectional
+  - 2022.10.23
+    - set cpu cores to 16 using BIOS on both servers
+    - unidirectional test
+    - EDR cable, back-to-back
+    - ILO 5 v2.72

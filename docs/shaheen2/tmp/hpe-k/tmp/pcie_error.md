@@ -1,0 +1,22 @@
+- KAUST
+    - Setup 1
+        - Milan        7713P        2.00 GHz        64 cores
+        - Milan        7713P        2.00 GHz        64 cores
+        - Status: Failed
+- HPE
+    - Setup 1
+        - Rome         7302P        3.00 GHz         16 cores
+        - Rome         7542         2.90 GHz         32 cores
+        - Status: Passed
+    - Setup 2
+        - Milan        7713         2.00 GHz         64 cores
+        - Milan        7713         2.00 GHz         64 cores
+        - Status: Failed
+    - Setup 3
+        - Rome         7742         2.25 GHz         64 cores
+        - Rome         7742         2.25 GHz         64 cores
+        - Status: Passed
+    - Setup 4
+        - Milan        7313P        3.00 GHz         16 cores
+        - Milan        7313P        3.00 GHz         16 cores
+        - Status: Failed
