@@ -2,7 +2,7 @@
 title: IOR
 ---
 
-## Interleaved Or Random ( IOR )
+## Interleaved Or Random (IOR)
 
 It is a parallel IO benchmark that evaluates the performance of parallel file
 systems using various interfaces and access patterns. IOR uses MPI for process
