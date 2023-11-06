@@ -12,7 +12,6 @@
 #SBATCH --threads-per-core=1
 #SBATCH --hint=nomultithread
 #SBATCH --account=v1003
-#SBATCH --reservation=rt46392
 
 export OMP_NUM_THREADS=32
 export KMP_AFFINITY=nowarnings,scatter,1,0,granularity=fine
