@@ -12,7 +12,7 @@ floating-point.
     - Sustained LINPACK performance is about `935-955 GFLOPS (~80% of the peak)`
 - Request a reservation on the nodes for exclusive use in SLURM
 
-```sh title="random helpful utility commands"
+```sh
 cd /scratch/farhanma/hpe/hpl/linpack
 
 sbatch -w nid0xxxx --reservation=rtxxxxx slurm_job.sh
