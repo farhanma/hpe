@@ -11,13 +11,13 @@ floating-point.
     - `1.2 TFLOPS = 2.3 GHz * 16 cores * 16 IPC * 2 sockets * 1 node`
     - Sustained LINPACK performance is about `935-955 GFLOPS (~80% of the peak)`
 - Request a reservation on the nodes for exclusive use in SLURM
-- `cd /scratch/farhanma/hpe/hpl/linpack && sbatch -w nid0xxxx slurm_job.sh`
+- `cd /scratch/farhanma/hpe/hpl/linpack && sbatch -w nid0xxxx --reservation=rtxxxxx slurm_job.sh`
 
 ```sh title="random helpful utility commands"
 # example to loop over nids to run slurm job script per node
 for i in {1852..1855} {3324..3327} {6448..6451} {6512..6515} {6740..6743}
 do
-  sbatch -w nid0$i slurm_job.sh
+  sbatch -w nid0$i --reservation=rtxxxxx slurm_job.sh
 done
 
 # example 1 to grep GFLOPS from results
